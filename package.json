@@ -1,0 +1,14 @@
+{
+  "name": "expansion-jam-board",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jam Board — live agenda tool for the Weekly Expansion Jam",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "smoke": "node test/smoke.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

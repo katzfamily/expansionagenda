@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jam Board 🚀 — Weekly Expansion Jam</title>
+  <meta name="description" content="Live agenda board for the Weekly Expansion Jam. Submit topics all week, cross them off live on the call." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <span class="brand-rocket">🚀</span>
+        <div>
+          <h1>Jam Board</h1>
+          <p>Weekly Expansion Jam 📞 · live call agenda</p>
+        </div>
+      </div>
+      <div class="masthead-actions">
+        <div class="whoami" id="whoami" title="Who's using this device?"></div>
+        <button class="btn btn-light" id="btn-new-meeting">＋ Meeting</button>
+        <button class="btn btn-primary" id="btn-new-topic">＋ Add a topic</button>
+      </div>
+    </div>
+    <nav class="meeting-tabs" id="meeting-tabs" aria-label="Meetings"></nav>
+  </header>
+
+  <main id="main">
+    <div class="loading" id="loading">Warming up the jam room…</div>
+  </main>
+
+  <footer class="footer">
+    <span id="backend-note"></span>
+    <span class="sync-dot" id="sync-dot" title="Live sync"></span>
+  </footer>
+
+  <!-- New topic dialog -->
+  <dialog id="topic-dialog">
+    <form id="topic-form" method="dialog">
+      <h2>What should we jam on? 🎤</h2>
+
+      <label class="field">
+        <span>Topic</span>
+        <input name="topic" required maxlength="200" placeholder="e.g. Should we do a summer IRL series?" autocomplete="off" />
+      </label>
+
+      <label class="field">
+        <span>Context <em>(what's the question or decision?)</em></span>
+        <textarea name="details" rows="3" placeholder="Links welcome…"></textarea>
+      </label>
+
+      <div class="field">
+        <span>Submitted by</span>
+        <div class="chip-group" id="who-chips" role="radiogroup">
+          <label class="chip chip-cara"><input type="radio" name="submittedBy" value="Cara" /><span>Cara</span></label>
+          <label class="chip chip-taylor"><input type="radio" name="submittedBy" value="Taylor" /><span>Taylor</span></label>
+          <label class="chip chip-tori"><input type="radio" name="submittedBy" value="Tori" /><span>Tori</span></label>
+          <label class="chip chip-other"><input type="radio" name="submittedBy" value="Other" /><span>Other</span></label>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <span>Priority</span>
+          <div class="chip-group" role="radiogroup">
+            <label class="chip"><input type="radio" name="priority" value="must" /><span>🔥 Must cover</span></label>
+            <label class="chip"><input type="radio" name="priority" value="iftime" checked /><span>💬 If time allows</span></label>
+            <label class="chip"><input type="radio" name="priority" value="parking" /><span>🅿️ Parking lot</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <span>Time needed</span>
+          <div class="chip-group" role="radiogroup">
+            <label class="chip"><input type="radio" name="timeNeeded" value="5 min" /><span>5m</span></label>
+            <label class="chip"><input type="radio" name="timeNeeded" value="10 min" checked /><span>10m</span></label>
+            <label class="chip"><input type="radio" name="timeNeeded" value="15 min" /><span>15m</span></label>
+            <label class="chip"><input type="radio" name="timeNeeded" value="20+ min" /><span>20m+</span></label>
+          </div>
+        </div>
+      </div>
+
+      <label class="field field-toggle">
+        <input type="checkbox" name="needsData" id="needs-data-toggle" />
+        <span>📊 Tori should come with data <em>(she needs a multi-day heads up!)</em></span>
+      </label>
+
+      <label class="field hidden" id="data-ask-field">
+        <span>What exactly should Tori pull?</span>
+        <textarea name="dataAsk" rows="2" placeholder="e.g. MoM new members + renewals since January"></textarea>
+      </label>
+
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-light" id="topic-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add to the jam 🚀</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- New meeting dialog -->
+  <dialog id="meeting-dialog">
+    <form id="meeting-form" method="dialog">
+      <h2>Schedule a jam 📞</h2>
+      <label class="field">
+        <span>Date</span>
+        <input type="date" name="date" required />
+      </label>
+      <label class="field">
+        <span>Zoom link <em>(optional)</em></span>
+        <input type="url" name="zoomLink" placeholder="https://zoom.us/j/…" />
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-light" id="meeting-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add meeting</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

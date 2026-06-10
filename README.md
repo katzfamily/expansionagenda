@@ -1,12 +1,77 @@
-# Expansion Jam 📞 Agenda Tool
+# Jam Board 🚀 — Weekly Expansion Jam agenda tool
 
-A lightweight agenda system for the Weekly Expansion Jam, built in Airtable
-(where the team already works). Anyone can submit topics during the week, and
-on the call you check them off one by one as they're covered.
+A custom web app for running the Weekly Expansion Jam: teammates submit topics
+all week, and on the call you cross them off live — everyone's screen updates
+in real time.
 
-**Base:** [Expansion Jam 📞 Agenda](https://airtable.com/appd47FpAzqZCzTQM)
+- **Live site:** https://expansion-jam-board.netlify.app (Netlify site `expansion-jam-board`)
+- **Airtable archive:** [Expansion Jam 📞 Agenda](https://airtable.com/appd47FpAzqZCzTQM)
 
-## How it works
+## Features
+
+- **Submit topics anytime** — who, context, priority (🔥 / 💬 / 🅿️), time
+  needed, all chip-based so it takes 20 seconds.
+- **Cross off live** — big satisfying checkmark with a strikethrough animation;
+  the board polls every 4s so all 4 of you stay in sync during the Zoom call.
+  Confetti when the agenda hits 100%. 🎉
+- **Time budgeting** — shows minutes still planned vs. the 60-minute call and
+  warns when you're overbooked.
+- **Tori's data flag baked in** — 📊 toggle on the submit form with a free-text
+  data ask, so the multi-day heads-up rule is part of the workflow.
+- **Wrap up meeting** — one click marks the call done, rolls uncovered topics
+  to next week's jam (creating it if needed), and prompts for the Fireflies
+  recap link, which is archived on the meeting tab.
+- **Parking lot** — park ideas that aren't for this week; pull them back with
+  one click.
+- **Outcome notes** — expand any topic to record decisions/next steps inline.
+
+## Architecture
+
+```
+public/                      static front end (vanilla JS, no build step)
+netlify/functions/api.mjs    serverless API (/api/*)
+netlify/functions/lib/       storage drivers + seed data
+test/smoke.mjs               end-to-end API tests (node test/smoke.mjs)
+```
+
+Storage is pluggable:
+
+| Driver | When | Notes |
+|---|---|---|
+| **Netlify Blobs** | default | zero config, works the moment the site deploys |
+| **Airtable** | set `AIRTABLE_TOKEN` env var | two-way syncs the board with the team's Airtable base, using field IDs so renames are safe (`AIRTABLE_BASE_ID` overridable, defaults to `appd47FpAzqZCzTQM`) |
+| in-memory | `JAM_DRIVER=memory` | used by the smoke tests |
+
+## Deploying
+
+The Netlify site **expansion-jam-board** is already created. To go live:
+
+1. Open https://app.netlify.com/projects/expansion-jam-board →
+   **Site configuration → Build & deploy → Link repository** and pick
+   `katzfamily/expansionagenda` (this repo's default branch). Build settings
+   are read from `netlify.toml` automatically.
+2. (Optional) Add `AIRTABLE_TOKEN` under **Environment variables** — create a
+   personal access token at https://airtable.com/create/tokens with
+   `data.records:read` + `data.records:write` scoped to the agenda base —
+   and the board starts reading/writing Airtable instead of Blobs.
+
+Alternatively, from a machine with the Netlify CLI:
+`netlify deploy --build --prod --site expansion-jam-board`.
+
+## Local dev
+
+```
+npm install
+npm run smoke   # API end-to-end tests
+npm run dev     # netlify dev (full local emulation incl. Blobs)
+```
+
+---
+
+## The companion Airtable base
+
+The Airtable base mirrors the board's schema and doubles as the long-term
+archive. If you'd rather run everything out of Airtable directly:
 
 ### Submitting a topic (anytime during the week)
 1. Open the **Agenda Topics** table (or the shared form — see setup below).
