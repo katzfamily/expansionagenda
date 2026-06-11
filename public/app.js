@@ -1,7 +1,7 @@
 /* Jam Board — live agenda for the Weekly Expansion Jam */
 
 const TIME_MINUTES = { "5 min": 5, "10 min": 10, "15 min": 15, "20+ min": 20 };
-const CALL_BUDGET_MIN = 60;
+const CALL_BUDGET_MIN = 45;
 
 let state = null; // { backend, backendLabel, meetings, topics }
 let selectedMeetingId = null;
@@ -429,7 +429,7 @@ function confetti() {
   const ctx = canvas.getContext("2d");
   canvas.width = innerWidth;
   canvas.height = innerHeight;
-  const colors = ["#ff5a5f", "#ff8a3d", "#ffb13d", "#1fae6e", "#8a5cf6", "#14b8a6", "#ec4899"];
+  const colors = ["#2f6594", "#5e72c8", "#8b6cc4", "#c24e76", "#a6792e", "#6473c9", "#9070c6"];
   const bits = Array.from({ length: 160 }, () => ({
     x: Math.random() * canvas.width,
     y: -20 - Math.random() * canvas.height * 0.4,
