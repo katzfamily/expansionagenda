@@ -10,7 +10,14 @@
     <main>
       <header id="topbar">
         <h1 id="wordmark">Bil<em>li</em></h1>
-        <p id="state">hold the orb or press and hold space to talk</p>
+        <div id="topbar-right">
+          <div id="weather" hidden>
+            <span id="weather-icon" aria-hidden="true"></span>
+            <span id="weather-temps"><span id="w-hi">–</span>° / <span id="w-lo">–</span>°</span>
+            <span id="weather-place"></span>
+          </div>
+          <p id="state">hold the orb or press and hold space to talk</p>
+        </div>
       </header>
 
       <div id="dash">
@@ -58,6 +65,7 @@
     <script src="/bookmarks.js" type="module"></script>
     <script src="/todos.js" type="module"></script>
     <script src="/memory.js" type="module"></script>
+    <script src="/weather.js" type="module"></script>
     <script src="/app.js" type="module"></script>
   </body>
 </html>
