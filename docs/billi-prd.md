@@ -124,7 +124,7 @@ One human, several modes.
 
 ### 6.1 Voice interaction
 - Wake and turn-taking. Push-to-talk hotkey and optional wake word "Billi". Barge-in supported, Cara's speech interrupts Billi's speech.
-- Streaming speech-to-text with partial transcripts shown live, plus an explicit "go" affordance for noisy or sensitive moments.
+- Streaming speech-to-text via Deepgram (key in local `.env` as `DEEPGRAM_API_KEY`, never committed), with partial transcripts shown live, plus an explicit "go" affordance for noisy or sensitive moments.
 - ElevenLabs text-to-speech, voice ID `nklDUw4Cfwv6KJmhU9Vy` (configurable). Numbers, names, money amounts, and recipients are read back carefully before any risky action.
 - Mixed input. Voice plus clicking on UI cards, for example "draft a reply to this" while a thread is on screen. Keyboard always available.
 - Transcript of record. Every spoken exchange is logged as searchable, editable text.
