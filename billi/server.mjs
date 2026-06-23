@@ -62,6 +62,12 @@ is read aloud by a text-to-speech voice, so:
 - When the inbox is ambiguous and more than one is connected, ask which one
   before acting, and never cross context between inboxes. Always name the
   inbox you used.
+- Triage rule: when Cara asks you to triage or go through her inbox, present
+  every email five at a time in the exact order Gmail returns them (most recent
+  first). Do not filter, rank, skip, group, or judge which ones matter, and do
+  not call anything urgent or important on your own. Read the five, then ask if
+  she wants the next five and continue with the page token. Let Cara decide
+  what matters.
 - You have a long-term memory. When Cara tells you to remember something, states
   a lasting preference, corrects you in a way that should stick, or gives
   feedback about how she wants things done, call remember to save it. Use
@@ -134,7 +140,7 @@ const TOOLS = [
   {
     name: "search_email",
     description:
-      "Search a Gmail inbox using Gmail query syntax (e.g. 'is:unread', 'from:taylor newer_than:3d', 'subject:invoice'). Call this whenever Cara asks about her email, inbox, what's new, who emailed, or to triage. Returns sender, subject, date, and snippet per thread.",
+      "Search a Gmail inbox using Gmail query syntax (e.g. 'is:unread', 'from:taylor newer_than:3d', 'subject:invoice'). Call this whenever Cara asks about her email, inbox, what's new, who emailed, or to triage. Returns sender, subject, date, and snippet per thread, in Gmail's own order (most recent first). For triage, return them five at a time and pass back next_page_token to fetch the following five.",
     input_schema: {
       type: "object",
       properties: {
@@ -143,7 +149,11 @@ const TOOLS = [
           description: "Which inbox (email address or a distinctive part of it). Omit only if just one is connected.",
         },
         query: { type: "string", description: "Gmail search query." },
-        max_results: { type: "integer", description: "How many threads to return (default 8)." },
+        max_results: { type: "integer", description: "How many threads to return (default 5)." },
+        page_token: {
+          type: "string",
+          description: "Pass the next_page_token from a previous search to get the next batch (e.g. the next five).",
+        },
       },
       required: ["query"],
     },
@@ -265,15 +275,21 @@ async function executeTool(name, input, actions) {
   }
   if (name === "search_email") {
     const acct = gmail.resolveAccount(input.account);
-    const results = await gmail.searchEmail(acct, input.query, input.max_results || 8);
+    const { results, nextPageToken } = await gmail.searchEmail(
+      acct,
+      input.query,
+      input.max_results || 5,
+      input.page_token,
+    );
     actions.push(`searched ${acct.email} for "${input.query}"`);
     if (!results.length) return `No threads in ${acct.email} match "${input.query}".`;
-    return (
-      `Results from ${acct.email}:\n` +
-      results
-        .map((r, i) => `${i + 1}. [thread ${r.threadId}] ${r.from} — ${r.subject} (${r.date})\n   ${r.snippet}`)
-        .join("\n")
-    );
+    const lines = results
+      .map((r, i) => `${i + 1}. [thread ${r.threadId}] ${r.from} — ${r.subject} (${r.date})\n   ${r.snippet}`)
+      .join("\n");
+    const more = nextPageToken
+      ? `\n\nMore beyond these. To show the next batch, search again with page_token: ${nextPageToken}`
+      : `\n\nThat is the end of the results.`;
+    return `Results from ${acct.email}, in inbox order (present these as-is, do not reorder or filter):\n${lines}${more}`;
   }
   if (name === "read_email_thread") {
     const acct = gmail.resolveAccount(input.account);

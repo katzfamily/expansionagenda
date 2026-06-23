@@ -135,12 +135,14 @@ function buildRaw({ to, subject, body, inReplyTo, references }) {
 // --- operations -----------------------------------------------------------
 
 // Search using Gmail query syntax (is:unread, from:x, newer_than:2d, etc.).
-export async function searchEmail(account, query, maxResults = 8) {
-  const list = await gapi(
-    account,
-    `/messages?q=${encodeURIComponent(query)}&maxResults=${maxResults}`,
-  );
-  if (!list.messages?.length) return [];
+// Results come back in Gmail's own order (most recent first) — no reordering
+// here. Returns a page of results plus a nextPageToken for the following page,
+// so callers can walk the inbox a batch at a time.
+export async function searchEmail(account, query, maxResults = 5, pageToken) {
+  const params = new URLSearchParams({ q: query, maxResults: String(maxResults) });
+  if (pageToken) params.set("pageToken", pageToken);
+  const list = await gapi(account, `/messages?${params.toString()}`);
+  if (!list.messages?.length) return { results: [], nextPageToken: null };
   const out = [];
   for (const { id } of list.messages) {
     const msg = await gapi(
@@ -156,7 +158,7 @@ export async function searchEmail(account, query, maxResults = 8) {
       snippet: msg.snippet || "",
     });
   }
-  return out;
+  return { results: out, nextPageToken: list.nextPageToken || null };
 }
 
 // Full thread as readable text.
