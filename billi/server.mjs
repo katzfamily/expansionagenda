@@ -642,5 +642,18 @@ server.listen(PORT, () => {
     !ELEVENLABS_API_KEY && "ELEVENLABS_API_KEY",
   ].filter(Boolean);
   if (missing.length) console.log(`  ⚠ missing in .env: ${missing.join(", ")}`);
+
+  // WhatsApp/Twilio status, so Cara can see at a glance whether sending is wired.
+  if (whatsapp.isConfigured()) {
+    console.log("  WhatsApp: Twilio is wired in ✓ — Billi can send on your say-so");
+  } else {
+    const c = whatsapp.config();
+    const need = [
+      !c.sid && "TWILIO_ACCOUNT_SID",
+      !c.token && "TWILIO_AUTH_TOKEN",
+      !c.from && "TWILIO_WHATSAPP_FROM",
+    ].filter(Boolean);
+    console.log(`  WhatsApp: NOT ready — still missing in .env: ${need.join(", ")}`);
+  }
   console.log("");
 });
