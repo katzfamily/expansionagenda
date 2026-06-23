@@ -20,6 +20,13 @@ let phase = "idle"; // idle | listening | thinking | speaking
 let audioCtx;
 
 // ---- orb animation -------------------------------------------------------
+// A Dreamers & Doers sunburst: tapered rays radiating from a warm core, on the
+// cream canvas. Periwinkle at rest and while listening, warm amber while Billi
+// speaks. The rays breathe with whatever audio is live.
+const PERIWINKLE = "134,133,253";
+const AMBER = "179,110,29";
+const RAYS = 28;
+
 function draw() {
   const w = orb.width;
   const h = orb.height;
@@ -28,36 +35,58 @@ function draw() {
   const cy = h / 2;
   const t = performance.now() / 1000;
 
-  const idlePulse = 0.5 + 0.5 * Math.sin(t * 1.5);
-  const energy = phase === "idle" ? idlePulse * 0.15 : Math.min(1, amplitude * 1.8);
-  const base = 70;
+  const idlePulse = 0.5 + 0.5 * Math.sin(t * 1.4);
+  const energy = phase === "idle" ? idlePulse * 0.18 : Math.min(1, amplitude * 1.9);
+  const color = phase === "speaking" ? AMBER : PERIWINKLE;
 
-  const color =
-    phase === "speaking" ? "217,138,91" : phase === "listening" ? "110,168,254" : "150,160,180";
+  const coreR = 52 + energy * 16;
+  const spin = phase === "thinking" ? t * 0.5 : t * 0.12;
 
-  for (let i = 3; i >= 0; i--) {
-    const r = base + i * 22 + energy * (40 + i * 18);
-    const alpha = (phase === "thinking" ? 0.16 : 0.26) - i * 0.05;
+  // radiating sunburst rays
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(spin);
+  for (let i = 0; i < RAYS; i++) {
+    const ang = (i / RAYS) * Math.PI * 2;
+    // alternate long/short rays for the starburst silhouette
+    const long = i % 2 === 0;
+    const reach = (long ? 78 : 46) + energy * (long ? 70 : 40);
+    const r0 = coreR - 6;
+    const r1 = coreR + reach;
+    const x0 = Math.cos(ang) * r0;
+    const y0 = Math.sin(ang) * r0;
+    const x1 = Math.cos(ang) * r1;
+    const y1 = Math.sin(ang) * r1;
+    const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+    grad.addColorStop(0, `rgba(${color},${0.55})`);
+    grad.addColorStop(1, `rgba(${color},0)`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = long ? 3 : 1.6;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${color},${Math.max(0.04, alpha)})`;
-    ctx.fill();
-  }
-
-  // core
-  ctx.beginPath();
-  ctx.arc(cx, cy, base * 0.55 + energy * 18, 0, Math.PI * 2);
-  ctx.fillStyle = `rgba(${color},0.9)`;
-  ctx.fill();
-
-  if (phase === "thinking") {
-    const a = (t * 2) % (Math.PI * 2);
-    ctx.beginPath();
-    ctx.arc(cx, cy, base + 30, a, a + Math.PI / 2);
-    ctx.strokeStyle = "rgba(244,241,234,0.7)";
-    ctx.lineWidth = 3;
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
     ctx.stroke();
   }
+  ctx.restore();
+
+  // soft halo
+  const halo = ctx.createRadialGradient(cx, cy, coreR * 0.4, cx, cy, coreR * 2.2);
+  halo.addColorStop(0, `rgba(${color},0.28)`);
+  halo.addColorStop(1, `rgba(${color},0)`);
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(cx, cy, coreR * 2.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // core
+  const core = ctx.createRadialGradient(cx - coreR * 0.3, cy - coreR * 0.3, 2, cx, cy, coreR);
+  core.addColorStop(0, `rgba(${color},0.95)`);
+  core.addColorStop(1, `rgba(${color},0.7)`);
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+  ctx.fill();
 
   requestAnimationFrame(draw);
 }
