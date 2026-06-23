@@ -14,9 +14,19 @@
       </header>
 
       <div id="dash">
-        <section id="stage">
-          <canvas id="orb" width="340" height="340" aria-hidden="true"></canvas>
-        </section>
+        <div id="left-col">
+          <section id="stage">
+            <canvas id="orb" width="340" height="340" aria-hidden="true"></canvas>
+          </section>
+
+          <section id="bookmarks" class="widget">
+            <div class="widget-head">
+              <h2 class="widget-title">Quick links</h2>
+              <button id="add-link" type="button" title="Add a link">+ add</button>
+            </div>
+            <div id="link-grid"></div>
+          </section>
+        </div>
 
         <section id="panel">
           <h2 id="panel-title">Conversation</h2>
@@ -26,6 +36,7 @@
 
       <div id="warn" hidden></div>
     </main>
+    <script src="/bookmarks.js" type="module"></script>
     <script src="/app.js" type="module"></script>
   </body>
 </html>

@@ -62,9 +62,16 @@ main {
 #dash {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) 1.1fr;
+  grid-template-columns: minmax(300px, 0.9fr) 1.1fr;
   gap: clamp(20px, 3vw, 44px);
   align-items: stretch;
+  min-height: 0;
+}
+
+#left-col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 24px);
   min-height: 0;
 }
 
@@ -78,6 +85,108 @@ main {
   border-radius: 22px;
   padding: 24px;
 }
+
+/* ---- widget shell ---- */
+.widget {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 20px 22px;
+}
+
+.widget-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.widget-title {
+  font-family: ivymode, "Iowan Old Style", Georgia, serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+#add-link {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--periwinkle);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+#add-link:hover { border-color: var(--periwinkle); }
+
+/* ---- link grid ---- */
+#link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 12px;
+}
+
+.link-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.link-tile:hover {
+  border-color: var(--periwinkle);
+  transform: translateY(-2px);
+}
+
+.link-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.link-label {
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.link-del {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.link-tile:hover .link-del { opacity: 1; }
+.link-del:hover { color: var(--amber); }
 
 #orb {
   width: 100%;
