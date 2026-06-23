@@ -17,6 +17,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { loadEnv } from "./lib/env.mjs";
 import * as gmail from "./lib/gmail.mjs";
 import * as memory from "./lib/memory.mjs";
+import * as todos from "./lib/todos.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -53,6 +54,11 @@ is read aloud by a text-to-speech voice, so:
   from:, newer_than:2d), read_email_thread, draft_email, draft_reply.
 - You CANNOT send email. draft_email and draft_reply only save to Gmail Drafts
   for Cara to review and send herself. Never say or imply a message was sent.
+- You keep Cara's to-do list. Whenever you draft a reply or email that commits
+  her to a follow-up action (a deliverable, a promised send, something due by a
+  date), call add_todo to capture it, naming the person and any date, and set
+  source to the inbox and recipient. Also add a task whenever she asks you to.
+  Use complete_todo when she says one is done. Mention briefly what you added.
 - When the inbox is ambiguous and more than one is connected, ask which one
   before acting, and never cross context between inboxes. Always name the
   inbox you used.
@@ -69,7 +75,7 @@ is read aloud by a text-to-speech voice, so:
 
 // Built fresh each turn so memory edits take effect without a restart.
 function buildSystemPrompt() {
-  return SYSTEM_BASE + memory.factsForPrompt();
+  return SYSTEM_BASE + memory.factsForPrompt() + todos.todosForPrompt();
 }
 
 const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
@@ -221,6 +227,33 @@ const TOOLS = [
       required: ["id"],
     },
   },
+  {
+    name: "add_todo",
+    description:
+      "Add a task to Cara's to-do list. Use when you draft a reply or email that commits her to a follow-up, or when she asks to add a task. Phrase it as a clear action with the person and any date.",
+    input_schema: {
+      type: "object",
+      properties: {
+        task: { type: "string", description: "The action to do, e.g. 'Send Taylor the Q3 numbers by Thursday'." },
+        source: {
+          type: "string",
+          description: "Where it came from, e.g. 'reply to Taylor in us@myfavoritescientist.com'. Optional.",
+        },
+      },
+      required: ["task"],
+    },
+  },
+  {
+    name: "complete_todo",
+    description: "Mark a to-do task done by its id (ids are shown next to each open task in your context).",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "integer", description: "The task id to complete." },
+      },
+      required: ["id"],
+    },
+  },
 ];
 
 // Run one tool call. Pushes a human-readable label onto `actions` for the UI.
@@ -274,6 +307,16 @@ async function executeTool(name, input, actions) {
     memory.removeFact(input.id);
     actions.push(`forgot memory ${input.id}`);
     return `Forgot memory ${input.id}.`;
+  }
+  if (name === "add_todo") {
+    const todo = todos.addTodo(input.task, input.source, new Date().toISOString());
+    actions.push(`added to-do: "${todo.text}"`);
+    return `Added to the to-do list (id ${todo.id}): ${todo.text}`;
+  }
+  if (name === "complete_todo") {
+    const todo = todos.setDone(input.id, true);
+    actions.push(`completed to-do ${todo.id}: "${todo.text}"`);
+    return `Marked task ${todo.id} done: ${todo.text}`;
   }
   throw new Error(`Unknown tool: ${name}`);
 }
@@ -369,6 +412,41 @@ async function handleMemory(req, res) {
   json(res, 405, { error: "method not allowed" });
 }
 
+// To-do widget: list, add, toggle done, or remove a task.
+async function handleTodos(req, res) {
+  if (req.method === "GET") {
+    return json(res, 200, { todos: todos.loadTodos() });
+  }
+  if (req.method === "POST") {
+    const { task, source } = JSON.parse((await readBody(req)).toString() || "{}");
+    try {
+      const todo = todos.addTodo(task, source, new Date().toISOString());
+      return json(res, 200, { todo, todos: todos.loadTodos() });
+    } catch (err) {
+      return json(res, 400, { error: err.message });
+    }
+  }
+  if (req.method === "PATCH") {
+    const { id, done } = JSON.parse((await readBody(req)).toString() || "{}");
+    try {
+      todos.setDone(id, done);
+      return json(res, 200, { todos: todos.loadTodos() });
+    } catch (err) {
+      return json(res, 400, { error: err.message });
+    }
+  }
+  if (req.method === "DELETE") {
+    const { id } = JSON.parse((await readBody(req)).toString() || "{}");
+    try {
+      todos.removeTodo(id);
+      return json(res, 200, { todos: todos.loadTodos() });
+    } catch (err) {
+      return json(res, 400, { error: err.message });
+    }
+  }
+  json(res, 405, { error: "method not allowed" });
+}
+
 // Conversation persistence: restore on load, or clear the thread.
 async function handleConversation(req, res) {
   if (req.method === "GET") {
@@ -414,6 +492,7 @@ const server = createServer(async (req, res) => {
     if (req.method === "POST" && req.url === "/api/respond") return await handleRespond(req, res);
     if (req.method === "POST" && req.url === "/api/speak") return await handleSpeak(req, res);
     if (req.url === "/api/memory") return await handleMemory(req, res);
+    if (req.url === "/api/todos") return await handleTodos(req, res);
     if (req.url === "/api/conversation") return await handleConversation(req, res);
     if (req.method === "GET" && req.url === "/api/status") return handleStatus(res);
     return await serveStatic(req, res);

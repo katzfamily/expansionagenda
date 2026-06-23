@@ -188,6 +188,86 @@ main {
 .link-tile:hover .link-del { opacity: 1; }
 .link-del:hover { color: var(--amber); }
 
+/* ---- to-do widget ---- */
+#todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.todo-empty {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.todo-box {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--periwinkle);
+  cursor: pointer;
+  flex: none;
+}
+
+.todo-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo-source {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, "SF Mono", monospace;
+}
+
+.todo-item.done .todo-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.todo-del {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.todo-del:hover { color: var(--amber); }
+
+#add-todo {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--periwinkle);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+#add-todo:hover { border-color: var(--periwinkle); }
+
 /* ---- memory widget ---- */
 #memory-list {
   list-style: none;

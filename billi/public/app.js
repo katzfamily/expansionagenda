@@ -227,8 +227,9 @@ async function runTurn(audioBlob) {
     });
     addTurn("billi", text, actions);
     messages.push({ role: "assistant", content: text });
-    // Billi may have saved or revised a memory this turn — reflect it.
+    // Billi may have saved a memory or captured a to-do this turn — reflect it.
     if (window.billiRefreshMemory) window.billiRefreshMemory();
+    if (window.billiRefreshTodos) window.billiRefreshTodos();
 
     setState("Speaking…");
     await speak(text);
