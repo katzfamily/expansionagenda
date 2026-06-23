@@ -5,6 +5,7 @@
   --periwinkle: #8685fd;/* listening / Billi resting */
   --amber: #b36e1d;     /* speaking / warm accent */
   --line: rgba(36, 35, 35, 0.12);
+  --card: #fff;
 }
 
 * { box-sizing: border-box; }
@@ -21,14 +22,23 @@ main {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 6vh 20px 48px;
-  gap: 16px;
+  padding: 28px clamp(20px, 4vw, 56px) 40px;
+  gap: 22px;
+}
+
+/* ---- top bar ---- */
+#topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
 }
 
 #wordmark {
   font-family: ivymode, "Iowan Old Style", Georgia, "Times New Roman", serif;
-  font-size: 40px;
+  font-size: 34px;
   font-weight: 600;
   letter-spacing: 0.01em;
   margin: 0;
@@ -39,36 +49,80 @@ main {
   color: var(--periwinkle);
 }
 
-#orb {
-  width: 340px;
-  height: 340px;
-  cursor: pointer;
-  touch-action: none;
-  user-select: none;
-}
-
 #state {
   color: var(--muted);
   margin: 0;
   letter-spacing: 0.04em;
   text-transform: lowercase;
-  font-size: 15px;
-  min-height: 1.4em;
-  text-align: center;
+  font-size: 14px;
+  text-align: right;
+}
+
+/* ---- dashboard grid ---- */
+#dash {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) 1.1fr;
+  gap: clamp(20px, 3vw, 44px);
+  align-items: stretch;
+  min-height: 0;
+}
+
+#stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(134, 133, 253, 0.07), transparent 62%);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 24px;
+}
+
+#orb {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  aspect-ratio: 1;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+/* ---- conversation panel ---- */
+#panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 22px 24px;
+}
+
+#panel-title {
+  font-family: ivymode, "Iowan Old Style", Georgia, serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 16px;
 }
 
 #conversation {
-  width: min(680px, 100%);
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-top: 18px;
+  padding-right: 4px;
 }
 
 .turn {
   padding: 13px 17px;
   border-radius: 16px;
-  max-width: 88%;
+  max-width: 92%;
   white-space: pre-wrap;
 }
 
@@ -80,7 +134,7 @@ main {
 
 .turn.billi {
   align-self: flex-start;
-  background: #fff;
+  background: var(--bg);
   border: 1px solid var(--line);
 }
 
@@ -103,7 +157,6 @@ main {
 }
 
 #warn {
-  width: min(680px, 100%);
   padding: 12px 16px;
   border-radius: 12px;
   background: rgba(179, 110, 29, 0.1);
@@ -111,4 +164,13 @@ main {
   color: var(--ink);
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 13px;
+}
+
+/* ---- stack on narrow screens ---- */
+@media (max-width: 760px) {
+  #dash { grid-template-columns: 1fr; }
+  #stage { padding: 16px; }
+  #orb { max-width: 260px; }
+  #topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
+  #state { text-align: left; }
 }
