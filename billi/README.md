@@ -35,6 +35,36 @@ The orb pulses blue while you talk and terracotta while she speaks.
 
 The first time, Chrome asks for microphone permission — allow it.
 
+## Connect Gmail (Phase 1 — read + draft, never send)
+
+Billi can triage your inboxes and write drafts. She **cannot send** — drafts
+land in Gmail's Drafts folder for you to review and send yourself.
+
+1. Create a Google OAuth client:
+   - https://console.cloud.google.com/ → create/select a project.
+   - Enable the **Gmail API**.
+   - **APIs & Services → Credentials → Create credentials → OAuth client ID →
+     Application type: Desktop app.**
+   - Copy the client ID and secret into the repo-root `.env`:
+     ```
+     GOOGLE_CLIENT_ID=...
+     GOOGLE_CLIENT_SECRET=...
+     ```
+   - On the OAuth consent screen, add yourself as a **test user** (so you can
+     authorize while the app is unverified).
+2. Connect each inbox (run once per account):
+   ```
+   npm run billi:connect-gmail
+   ```
+   A Google consent screen opens; approve read + draft access. The refresh
+   token is saved to `billi/.gmail-accounts.json` (gitignored). Run it again
+   to add another inbox.
+3. Start Billi and ask: *"What's unread in my inbox?"*, *"Anything from Taylor
+   this week?"*, *"Draft a reply saying I'll get her the numbers Thursday."*
+
+With more than one inbox connected, Billi asks which one when it's ambiguous,
+and never crosses context between them.
+
 ## How it fits together
 
 | Piece | What it does |
@@ -42,8 +72,10 @@ The first time, Chrome asks for microphone permission — allow it.
 | `server.mjs` | Local Node server. Serves the UI and bridges three APIs. Loads keys from `.env` and Billi's persona/guardrails from the repo-root `CLAUDE.md` (used as the system prompt). |
 | `public/index.html` + `app.js` + `style.css` | The orb, push-to-talk, transcript, and the audio-reactive animation. |
 | `/api/listen` | Browser audio → Deepgram → transcript. |
-| `/api/respond` | Conversation → Claude (`claude-opus-4-8`) → reply text. |
+| `/api/respond` | Conversation → Claude (`claude-opus-4-8`) with a Gmail tool-use loop → reply text + the actions taken. |
 | `/api/speak` | Reply text → ElevenLabs (voice `nklDUw4Cfwv6KJmhU9Vy`) → audio. |
+| `lib/gmail.mjs` | Gmail read + draft over the REST API (raw fetch, OAuth refresh). No send function. |
+| `connect-gmail.mjs` | One-time OAuth flow; saves a per-inbox refresh token. |
 
 ## Knobs (optional, via `.env`)
 
@@ -56,7 +88,8 @@ The first time, Chrome asks for microphone permission — allow it.
 
 ## What's deliberately not here yet
 
-- Connectors and live account access (the §8 integrations in the PRD).
+- Sending email (drafts only, by design — Billi never sends without sign-off).
+- Other connectors: Calendar, Slack, Stripe (the §8 integrations in the PRD).
 - Wake word (v0 is push-to-talk only — best while others are in earshot).
 - Streaming TTS (v0 speaks each reply after it's fully generated; replies are
   short, so it stays snappy).
