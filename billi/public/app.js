@@ -90,7 +90,7 @@ function meter(analyser) {
 }
 
 // ---- conversation UI -----------------------------------------------------
-function addTurn(who, text) {
+function addTurn(who, text, actions) {
   const div = document.createElement("div");
   div.className = `turn ${who}`;
   const label = document.createElement("span");
@@ -98,6 +98,12 @@ function addTurn(who, text) {
   label.textContent = who === "user" ? "You" : "Billi";
   div.appendChild(label);
   div.appendChild(document.createTextNode(text));
+  if (actions && actions.length) {
+    const acts = document.createElement("div");
+    acts.className = "actions";
+    acts.textContent = "↳ " + actions.join(" · ");
+    div.appendChild(acts);
+  }
   convoEl.appendChild(div);
   div.scrollIntoView({ behavior: "smooth", block: "end" });
   return div;
@@ -185,12 +191,12 @@ async function runTurn(audioBlob) {
     messages.push({ role: "user", content: transcript });
 
     setState("Thinking…");
-    const { text } = await api("/api/respond", {
+    const { text, actions } = await api("/api/respond", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ messages }),
     });
-    addTurn("billi", text);
+    addTurn("billi", text, actions);
     messages.push({ role: "assistant", content: text });
 
     setState("Speaking…");

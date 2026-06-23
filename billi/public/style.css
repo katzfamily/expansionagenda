@@ -77,6 +77,13 @@ main {
   margin-bottom: 4px;
 }
 
+.turn .actions {
+  margin-top: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 #warn {
   width: min(680px, 100%);
   padding: 12px 16px;

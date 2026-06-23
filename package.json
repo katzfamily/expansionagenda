@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "netlify dev",
     "smoke": "node test/smoke.mjs",
-    "billi": "node billi/server.mjs"
+    "billi": "node billi/server.mjs",
+    "billi:connect-gmail": "node billi/connect-gmail.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",

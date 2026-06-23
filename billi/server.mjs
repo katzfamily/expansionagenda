@@ -14,26 +14,14 @@ import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, extname, normalize } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
+import { loadEnv } from "./lib/env.mjs";
+import * as gmail from "./lib/gmail.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 const PUBLIC = join(HERE, "public");
 const PORT = process.env.BILLI_PORT || 8787;
 
-// --- tiny .env loader (no dependency) -------------------------------------
-// Only sets vars that aren't already in the environment.
-function loadEnv(path) {
-  if (!existsSync(path)) return;
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const val = trimmed.slice(eq + 1).trim();
-    if (!(key in process.env)) process.env[key] = val;
-  }
-}
 loadEnv(join(ROOT, ".env"));
 
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
@@ -56,9 +44,17 @@ is read aloud by a text-to-speech voice, so:
   no markdown, no bullet points, no headers, no emoji.
 - Be brief and conversational. Lead with the answer. Offer to elaborate rather
   than dumping detail.
-- This is v0: you do not yet have live access to email, calendar, Slack, or
-  Stripe. If asked to do something that needs a connector you don't have, say
-  so plainly and offer to note it for when that connector is wired up.
+- You have a Gmail connector with read and draft access across Cara's
+  connected inboxes. Use it for triage, search, reading, and drafting. Tools:
+  list_email_accounts, search_email (Gmail query syntax like is:unread,
+  from:, newer_than:2d), read_email_thread, draft_email, draft_reply.
+- You CANNOT send email. draft_email and draft_reply only save to Gmail Drafts
+  for Cara to review and send herself. Never say or imply a message was sent.
+- When the inbox is ambiguous and more than one is connected, ask which one
+  before acting, and never cross context between inboxes. Always name the
+  inbox you used.
+- You do not yet have calendar, Slack, or Stripe. If asked for those, say so
+  plainly and offer to note it for when that connector is wired up.
 - Never invent facts, deadlines, or data. Honor the guardrails above.`;
 
 const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
@@ -106,27 +102,155 @@ async function handleListen(req, res) {
   json(res, 200, { transcript });
 }
 
-// Conversation -> reply text via Claude.
+// Gmail tools exposed to Claude. Read + draft only — there is no send tool.
+const TOOLS = [
+  {
+    name: "list_email_accounts",
+    description:
+      "List the Gmail inboxes connected to Billi. Call this to know which inboxes exist or to disambiguate before another email action.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "search_email",
+    description:
+      "Search a Gmail inbox using Gmail query syntax (e.g. 'is:unread', 'from:taylor newer_than:3d', 'subject:invoice'). Call this whenever Cara asks about her email, inbox, what's new, who emailed, or to triage. Returns sender, subject, date, and snippet per thread.",
+    input_schema: {
+      type: "object",
+      properties: {
+        account: {
+          type: "string",
+          description: "Which inbox (email address or a distinctive part of it). Omit only if just one is connected.",
+        },
+        query: { type: "string", description: "Gmail search query." },
+        max_results: { type: "integer", description: "How many threads to return (default 8)." },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "read_email_thread",
+    description:
+      "Read the full text of one email thread. Call after search_email when you need the actual contents to summarize or draft a reply.",
+    input_schema: {
+      type: "object",
+      properties: {
+        account: { type: "string", description: "Which inbox." },
+        thread_id: { type: "string", description: "threadId from search_email." },
+      },
+      required: ["thread_id"],
+    },
+  },
+  {
+    name: "draft_email",
+    description:
+      "Create a NEW email draft in Gmail Drafts. Saves a draft only — it does NOT send. Use when Cara asks to write or draft a new email.",
+    input_schema: {
+      type: "object",
+      properties: {
+        account: { type: "string", description: "Which inbox to draft from." },
+        to: { type: "string", description: "Recipient email address." },
+        subject: { type: "string" },
+        body: { type: "string", description: "Plain-text body, in Cara's voice." },
+      },
+      required: ["to", "subject", "body"],
+    },
+  },
+  {
+    name: "draft_reply",
+    description:
+      "Draft a reply within an existing thread, saved to Gmail Drafts. Does NOT send. Use when Cara asks to reply to a message you found.",
+    input_schema: {
+      type: "object",
+      properties: {
+        account: { type: "string", description: "Which inbox." },
+        thread_id: { type: "string", description: "threadId of the thread to reply to." },
+        body: { type: "string", description: "Plain-text reply body, in Cara's voice." },
+      },
+      required: ["thread_id", "body"],
+    },
+  },
+];
+
+// Run one tool call. Pushes a human-readable label onto `actions` for the UI.
+async function executeTool(name, input, actions) {
+  if (name === "list_email_accounts") {
+    actions.push("checked connected inboxes");
+    const accts = gmail.loadAccounts().map((a) => a.email);
+    return accts.length ? `Connected inboxes: ${accts.join(", ")}` : "No inboxes connected yet.";
+  }
+  if (name === "search_email") {
+    const acct = gmail.resolveAccount(input.account);
+    const results = await gmail.searchEmail(acct, input.query, input.max_results || 8);
+    actions.push(`searched ${acct.email} for "${input.query}"`);
+    if (!results.length) return `No threads in ${acct.email} match "${input.query}".`;
+    return (
+      `Results from ${acct.email}:\n` +
+      results
+        .map((r, i) => `${i + 1}. [thread ${r.threadId}] ${r.from} — ${r.subject} (${r.date})\n   ${r.snippet}`)
+        .join("\n")
+    );
+  }
+  if (name === "read_email_thread") {
+    const acct = gmail.resolveAccount(input.account);
+    const msgs = await gmail.readThread(acct, input.thread_id);
+    actions.push(`read a thread in ${acct.email}`);
+    return msgs.join("\n\n---\n\n").slice(0, 12000);
+  }
+  if (name === "draft_email") {
+    const acct = gmail.resolveAccount(input.account);
+    const id = await gmail.draftEmail(acct, { to: input.to, subject: input.subject, body: input.body });
+    actions.push(`drafted an email to ${input.to} in ${acct.email} (saved to Drafts, not sent)`);
+    return `Draft saved to ${acct.email} Drafts (id ${id}). To: ${input.to}. Not sent — Cara reviews and sends.`;
+  }
+  if (name === "draft_reply") {
+    const acct = gmail.resolveAccount(input.account);
+    const d = await gmail.draftReply(acct, input.thread_id, input.body);
+    actions.push(`drafted a reply to ${d.to} in ${acct.email} (saved to Drafts, not sent)`);
+    return `Reply draft saved to ${acct.email} Drafts (id ${d.id}). To: ${d.to}, Subject: ${d.subject}. Not sent.`;
+  }
+  throw new Error(`Unknown tool: ${name}`);
+}
+
+// Conversation -> reply text via Claude, with a Gmail tool-use loop.
 async function handleRespond(req, res) {
   if (!anthropic) return json(res, 500, { error: "ANTHROPIC_API_KEY not set in .env" });
   const { messages } = JSON.parse((await readBody(req)).toString() || "{}");
   if (!Array.isArray(messages) || !messages.length) {
     return json(res, 400, { error: "messages array required" });
   }
+  const convo = [...messages];
+  const actions = [];
   try {
-    const resp = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      output_config: { effort: "low" }, // snappy turns for voice
-      system: SYSTEM_PROMPT,
-      messages,
-    });
-    const text = resp.content
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-    json(res, 200, { text });
+    let finalText = "";
+    for (let step = 0; step < 6; step++) {
+      const resp = await anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 1024,
+        output_config: { effort: "medium" },
+        system: SYSTEM_PROMPT,
+        tools: TOOLS,
+        messages: convo,
+      });
+      finalText = resp.content
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("")
+        .trim();
+      const toolUses = resp.content.filter((b) => b.type === "tool_use");
+      if (!toolUses.length) break;
+      convo.push({ role: "assistant", content: resp.content });
+      const results = [];
+      for (const tu of toolUses) {
+        try {
+          const out = await executeTool(tu.name, tu.input, actions);
+          results.push({ type: "tool_result", tool_use_id: tu.id, content: out });
+        } catch (err) {
+          results.push({ type: "tool_result", tool_use_id: tu.id, content: err.message, is_error: true });
+        }
+      }
+      convo.push({ role: "user", content: results });
+    }
+    json(res, 200, { text: finalText, actions });
   } catch (err) {
     json(res, 502, { error: `Claude error: ${err.message}` });
   }
