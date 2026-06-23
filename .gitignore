@@ -6,3 +6,6 @@ node_modules/
 .env.local
 .billi.env
 billi/.gmail-accounts.json
+
+# Billi's private memory and saved conversations — local only
+billi/memory/

@@ -227,6 +227,8 @@ async function runTurn(audioBlob) {
     });
     addTurn("billi", text, actions);
     messages.push({ role: "assistant", content: text });
+    // Billi may have saved or revised a memory this turn — reflect it.
+    if (window.billiRefreshMemory) window.billiRefreshMemory();
 
     setState("Speaking…");
     await speak(text);
@@ -289,8 +291,40 @@ document.addEventListener("keyup", (e) => {
   }
 });
 
+// ---- restore the saved conversation --------------------------------------
+async function restoreConversation() {
+  try {
+    const { messages: saved } = await api("/api/conversation");
+    if (!Array.isArray(saved) || !saved.length) return;
+    for (const m of saved) {
+      if (typeof m.content !== "string") continue;
+      addTurn(m.role === "assistant" ? "billi" : "user", m.content);
+      messages.push({ role: m.role, content: m.content });
+    }
+  } catch {
+    /* best-effort — start fresh if it can't be restored */
+  }
+}
+
+// Clear the saved thread on the server and in the UI.
+const clearBtn = document.getElementById("clear-convo");
+if (clearBtn) {
+  clearBtn.addEventListener("click", async () => {
+    if (!confirm("Clear the saved conversation? Billi's long-term memory is kept.")) return;
+    try {
+      await fetch("/api/conversation", { method: "DELETE" });
+    } catch {
+      /* clear locally regardless */
+    }
+    messages.length = 0;
+    convoEl.textContent = "";
+    setState("hold the orb or press and hold space to talk");
+  });
+}
+
 // ---- key check on load ---------------------------------------------------
 (async () => {
+  await restoreConversation();
   try {
     const s = await api("/api/status");
     const missing = [

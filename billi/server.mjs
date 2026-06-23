@@ -16,6 +16,7 @@ import { dirname, join, extname, normalize } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { loadEnv } from "./lib/env.mjs";
 import * as gmail from "./lib/gmail.mjs";
+import * as memory from "./lib/memory.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -36,7 +37,7 @@ const MODEL = process.env.BILLI_MODEL || "claude-sonnet-4-6";
 const operatingContext = existsSync(join(ROOT, "CLAUDE.md"))
   ? readFileSync(join(ROOT, "CLAUDE.md"), "utf8")
   : "";
-const SYSTEM_PROMPT = `${operatingContext}
+const SYSTEM_BASE = `${operatingContext}
 
 ---
 
@@ -55,9 +56,21 @@ is read aloud by a text-to-speech voice, so:
 - When the inbox is ambiguous and more than one is connected, ask which one
   before acting, and never cross context between inboxes. Always name the
   inbox you used.
+- You have a long-term memory. When Cara tells you to remember something, states
+  a lasting preference, corrects you in a way that should stick, or gives
+  feedback about how she wants things done, call remember to save it. Use
+  update_memory to revise a fact and forget to drop one that is wrong or stale.
+  Keep each memory a single specific sentence. Do not save fleeting context or
+  anything she would not want kept. Confirm briefly in your spoken reply when
+  you remember or update something.
 - You do not yet have calendar, Slack, or Stripe. If asked for those, say so
   plainly and offer to note it for when that connector is wired up.
 - Never invent facts, deadlines, or data. Honor the guardrails above.`;
+
+// Built fresh each turn so memory edits take effect without a restart.
+function buildSystemPrompt() {
+  return SYSTEM_BASE + memory.factsForPrompt();
+}
 
 const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 
@@ -171,6 +184,43 @@ const TOOLS = [
       required: ["thread_id", "body"],
     },
   },
+  {
+    name: "remember",
+    description:
+      "Save a durable fact or preference about Cara to long-term memory so you keep it across future conversations. Use when she tells you to remember something, states a lasting preference, or corrects you in a way that should persist. One specific sentence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        note: { type: "string", description: "The single-sentence fact or preference to remember." },
+      },
+      required: ["note"],
+    },
+  },
+  {
+    name: "update_memory",
+    description:
+      "Revise an existing long-term memory by its id (ids are shown next to each remembered fact in your context). Use when a remembered fact changes.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "integer", description: "The memory id to update." },
+        note: { type: "string", description: "The corrected single-sentence fact." },
+      },
+      required: ["id", "note"],
+    },
+  },
+  {
+    name: "forget",
+    description:
+      "Delete a long-term memory by its id when it is wrong, stale, or Cara asks you to forget it.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "integer", description: "The memory id to forget." },
+      },
+      required: ["id"],
+    },
+  },
 ];
 
 // Run one tool call. Pushes a human-readable label onto `actions` for the UI.
@@ -210,6 +260,21 @@ async function executeTool(name, input, actions) {
     actions.push(`drafted a reply to ${d.to} in ${acct.email} (saved to Drafts, not sent)`);
     return `Reply draft saved to ${acct.email} Drafts (id ${d.id}). To: ${d.to}, Subject: ${d.subject}. Not sent.`;
   }
+  if (name === "remember") {
+    const fact = memory.addFact(input.note, new Date().toISOString());
+    actions.push(`remembered: "${fact.text}"`);
+    return `Saved to long-term memory (id ${fact.id}): ${fact.text}`;
+  }
+  if (name === "update_memory") {
+    const fact = memory.updateFact(input.id, input.note);
+    actions.push(`updated memory ${fact.id}: "${fact.text}"`);
+    return `Memory ${fact.id} updated to: ${fact.text}`;
+  }
+  if (name === "forget") {
+    memory.removeFact(input.id);
+    actions.push(`forgot memory ${input.id}`);
+    return `Forgot memory ${input.id}.`;
+  }
   throw new Error(`Unknown tool: ${name}`);
 }
 
@@ -224,12 +289,13 @@ async function handleRespond(req, res) {
   const actions = [];
   try {
     let finalText = "";
+    const systemPrompt = buildSystemPrompt();
     for (let step = 0; step < 6; step++) {
       const resp = await anthropic.messages.create({
         model: MODEL,
         max_tokens: 1024,
         output_config: { effort: "low" }, // fast turns for voice
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         tools: TOOLS,
         messages: convo,
       });
@@ -252,6 +318,8 @@ async function handleRespond(req, res) {
       }
       convo.push({ role: "user", content: results });
     }
+    // Persist the clean text transcript so the thread survives a reload.
+    memory.saveConversation([...messages, { role: "assistant", content: finalText }]);
     json(res, 200, { text: finalText, actions });
   } catch (err) {
     json(res, 502, { error: `Claude error: ${err.message}` });
@@ -273,6 +341,44 @@ async function handleSpeak(req, res) {
   const audio = Buffer.from(await el.arrayBuffer());
   res.writeHead(200, { "content-type": "audio/mpeg", "content-length": audio.length });
   res.end(audio);
+}
+
+// Memory widget: list, manually add, or remove a remembered fact.
+async function handleMemory(req, res) {
+  if (req.method === "GET") {
+    return json(res, 200, { facts: memory.loadFacts() });
+  }
+  if (req.method === "POST") {
+    const { note } = JSON.parse((await readBody(req)).toString() || "{}");
+    try {
+      const fact = memory.addFact(note, new Date().toISOString());
+      return json(res, 200, { fact, facts: memory.loadFacts() });
+    } catch (err) {
+      return json(res, 400, { error: err.message });
+    }
+  }
+  if (req.method === "DELETE") {
+    const { id } = JSON.parse((await readBody(req)).toString() || "{}");
+    try {
+      memory.removeFact(id);
+      return json(res, 200, { facts: memory.loadFacts() });
+    } catch (err) {
+      return json(res, 400, { error: err.message });
+    }
+  }
+  json(res, 405, { error: "method not allowed" });
+}
+
+// Conversation persistence: restore on load, or clear the thread.
+async function handleConversation(req, res) {
+  if (req.method === "GET") {
+    return json(res, 200, { messages: memory.loadConversation() });
+  }
+  if (req.method === "DELETE") {
+    memory.clearConversation();
+    return json(res, 200, { messages: [] });
+  }
+  json(res, 405, { error: "method not allowed" });
 }
 
 // Which keys are configured (so the UI can warn before the first turn).
@@ -307,6 +413,8 @@ const server = createServer(async (req, res) => {
     if (req.method === "POST" && req.url === "/api/listen") return await handleListen(req, res);
     if (req.method === "POST" && req.url === "/api/respond") return await handleRespond(req, res);
     if (req.method === "POST" && req.url === "/api/speak") return await handleSpeak(req, res);
+    if (req.url === "/api/memory") return await handleMemory(req, res);
+    if (req.url === "/api/conversation") return await handleConversation(req, res);
     if (req.method === "GET" && req.url === "/api/status") return handleStatus(res);
     return await serveStatic(req, res);
   } catch (err) {

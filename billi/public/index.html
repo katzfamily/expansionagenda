@@ -26,10 +26,21 @@
             </div>
             <div id="link-grid"></div>
           </section>
+
+          <section id="memory" class="widget">
+            <div class="widget-head">
+              <h2 class="widget-title">What Billi remembers</h2>
+              <button id="add-memory" type="button" title="Add a memory">+ add</button>
+            </div>
+            <ul id="memory-list"></ul>
+          </section>
         </div>
 
         <section id="panel">
-          <h2 id="panel-title">Conversation</h2>
+          <div class="widget-head">
+            <h2 id="panel-title">Conversation</h2>
+            <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
+          </div>
           <div id="conversation" aria-live="polite"></div>
         </section>
       </div>
@@ -37,6 +48,7 @@
       <div id="warn" hidden></div>
     </main>
     <script src="/bookmarks.js" type="module"></script>
+    <script src="/memory.js" type="module"></script>
     <script src="/app.js" type="module"></script>
   </body>
 </html>
