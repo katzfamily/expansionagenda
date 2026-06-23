@@ -28,7 +28,9 @@ const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const VOICE_ID = process.env.BILLI_VOICE_ID || "nklDUw4Cfwv6KJmhU9Vy";
-const MODEL = process.env.BILLI_MODEL || "claude-opus-4-8";
+// Default to a fast model for snappy voice turns. Set BILLI_MODEL in .env to
+// claude-opus-4-8 if you want maximum reasoning quality over speed.
+const MODEL = process.env.BILLI_MODEL || "claude-sonnet-4-6";
 
 // Billi's persona/guardrails come from CLAUDE.md; append voice-mode framing.
 const operatingContext = existsSync(join(ROOT, "CLAUDE.md"))
@@ -226,7 +228,7 @@ async function handleRespond(req, res) {
       const resp = await anthropic.messages.create({
         model: MODEL,
         max_tokens: 1024,
-        output_config: { effort: "medium" },
+        output_config: { effort: "low" }, // fast turns for voice
         system: SYSTEM_PROMPT,
         tools: TOOLS,
         messages: convo,
