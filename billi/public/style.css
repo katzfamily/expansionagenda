@@ -371,8 +371,98 @@ main {
   user-select: none;
 }
 
+/* ---- right column: outbox + conversation ---- */
+#right-col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 20px);
+  min-height: 0;
+}
+
+#outbox {
+  background: rgba(134, 133, 253, 0.08);
+  border: 1px solid var(--periwinkle);
+  border-radius: 22px;
+  padding: 18px 20px;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+
+#outbox-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.outbox-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.outbox-to {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.outbox-source {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, "SF Mono", monospace;
+  margin-bottom: 6px;
+}
+
+.outbox-body {
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  margin-bottom: 10px;
+}
+
+.outbox-actions { display: flex; gap: 8px; }
+
+.outbox-send {
+  border: none;
+  background: var(--periwinkle);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.outbox-send:disabled { opacity: 0.6; cursor: default; }
+
+.outbox-discard {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.outbox-discard:hover { color: var(--amber); border-color: var(--amber); }
+
+.outbox-error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--amber);
+  font-family: ui-monospace, "SF Mono", monospace;
+}
+
 /* ---- conversation panel ---- */
 #panel {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;

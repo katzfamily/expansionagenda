@@ -227,9 +227,10 @@ async function runTurn(audioBlob) {
     });
     addTurn("billi", text, actions);
     messages.push({ role: "assistant", content: text });
-    // Billi may have saved a memory or captured a to-do this turn — reflect it.
+    // Billi may have saved a memory, captured a to-do, or staged a WhatsApp.
     if (window.billiRefreshMemory) window.billiRefreshMemory();
     if (window.billiRefreshTodos) window.billiRefreshTodos();
+    if (window.billiRefreshOutbox) window.billiRefreshOutbox();
 
     setState("Speaking…");
     await speak(text);

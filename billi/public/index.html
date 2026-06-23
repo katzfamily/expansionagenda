@@ -51,13 +51,22 @@
           </section>
         </div>
 
-        <section id="panel">
-          <div class="widget-head">
-            <h2 id="panel-title">Conversation</h2>
-            <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
-          </div>
-          <div id="conversation" aria-live="polite"></div>
-        </section>
+        <div id="right-col">
+          <section id="outbox" hidden>
+            <div class="widget-head">
+              <h2 class="widget-title">WhatsApp outbox · tap to send</h2>
+            </div>
+            <ul id="outbox-list"></ul>
+          </section>
+
+          <section id="panel">
+            <div class="widget-head">
+              <h2 id="panel-title">Conversation</h2>
+              <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
+            </div>
+            <div id="conversation" aria-live="polite"></div>
+          </section>
+        </div>
       </div>
 
       <div id="warn" hidden></div>
@@ -66,6 +75,7 @@
     <script src="/todos.js" type="module"></script>
     <script src="/memory.js" type="module"></script>
     <script src="/weather.js" type="module"></script>
+    <script src="/whatsapp.js" type="module"></script>
     <script src="/app.js" type="module"></script>
   </body>
 </html>

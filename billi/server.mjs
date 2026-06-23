@@ -18,6 +18,7 @@ import { loadEnv } from "./lib/env.mjs";
 import * as gmail from "./lib/gmail.mjs";
 import * as memory from "./lib/memory.mjs";
 import * as todos from "./lib/todos.mjs";
+import * as whatsapp from "./lib/whatsapp.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -75,6 +76,13 @@ is read aloud by a text-to-speech voice, so:
   Keep each memory a single specific sentence. Do not save fleeting context or
   anything she would not want kept. Confirm briefly in your spoken reply when
   you remember or update something.
+- You can forward things to people over WhatsApp, but you NEVER send. Calling
+  forward_via_whatsapp only STAGES the message in Cara's Outbox; it goes out
+  only when she taps Send herself. To forward an email, read the thread first,
+  compose a short WhatsApp message in Cara's voice, then stage it. Always tell
+  her it is staged and waiting for her tap — never say or imply it was sent. If
+  you do not have the recipient's number, ask for it or save it with
+  save_whatsapp_contact. Recipients must have joined the WhatsApp sandbox.
 - You do not yet have calendar, Slack, or Stripe. If asked for those, say so
   plainly and offer to note it for when that connector is wired up.
 - Never invent facts, deadlines, or data. Honor the guardrails above.`;
@@ -264,6 +272,38 @@ const TOOLS = [
       required: ["id"],
     },
   },
+  {
+    name: "forward_via_whatsapp",
+    description:
+      "STAGE a WhatsApp message to Cara's Outbox for her to send. This does NOT send — it only queues the message until Cara taps Send. Use to forward an email (compose a short message from the thread you read) or to send any WhatsApp Cara asks for.",
+    input_schema: {
+      type: "object",
+      properties: {
+        to: {
+          type: "string",
+          description: "Recipient: a saved contact name, a phone number, or 'me' for Cara's own number.",
+        },
+        message: { type: "string", description: "The WhatsApp message text, in Cara's voice." },
+        source: {
+          type: "string",
+          description: "Optional note on what this forwards, e.g. 'email from Taylor in us@myfavoritescientist.com'.",
+        },
+      },
+      required: ["to", "message"],
+    },
+  },
+  {
+    name: "save_whatsapp_contact",
+    description: "Save a WhatsApp contact so you can forward to them by name later.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Contact name, e.g. 'Sam'." },
+        number: { type: "string", description: "Their phone number, e.g. +13045551234." },
+      },
+      required: ["name", "number"],
+    },
+  },
 ];
 
 // Run one tool call. Pushes a human-readable label onto `actions` for the UI.
@@ -333,6 +373,20 @@ async function executeTool(name, input, actions) {
     const todo = todos.setDone(input.id, true);
     actions.push(`completed to-do ${todo.id}: "${todo.text}"`);
     return `Marked task ${todo.id} done: ${todo.text}`;
+  }
+  if (name === "forward_via_whatsapp") {
+    const rcpt = whatsapp.resolveRecipient(input.to);
+    const item = whatsapp.stageMessage(
+      { number: rcpt.number, label: rcpt.label, body: input.message, source: input.source },
+      new Date().toISOString(),
+    );
+    actions.push(`staged a WhatsApp to ${rcpt.label} (awaiting Cara's tap to send)`);
+    return `Staged a WhatsApp to ${rcpt.label} in the Outbox (id ${item.id}). NOT sent — Cara taps Send to send it.`;
+  }
+  if (name === "save_whatsapp_contact") {
+    const c = whatsapp.saveContact(input.name, input.number);
+    actions.push(`saved WhatsApp contact ${c.name}`);
+    return `Saved ${c.name} (${c.number}) as a WhatsApp contact.`;
   }
   throw new Error(`Unknown tool: ${name}`);
 }
@@ -463,6 +517,33 @@ async function handleTodos(req, res) {
   json(res, 405, { error: "method not allowed" });
 }
 
+// WhatsApp Outbox: list staged messages, send one (the human sign-off), or
+// discard one. Sending is the ONLY place a WhatsApp actually goes out, and it
+// is triggered by Cara tapping Send in the dashboard.
+async function handleWhatsapp(req, res) {
+  if (req.method === "GET") {
+    return json(res, 200, { outbox: whatsapp.loadOutbox(), configured: whatsapp.isConfigured() });
+  }
+  const body = JSON.parse((await readBody(req)).toString() || "{}");
+  if (req.method === "POST") {
+    try {
+      const sent = await whatsapp.sendStaged(body.id);
+      return json(res, 200, { sent, outbox: whatsapp.loadOutbox() });
+    } catch (err) {
+      return json(res, 400, { error: err.message });
+    }
+  }
+  if (req.method === "DELETE") {
+    try {
+      whatsapp.discard(body.id);
+      return json(res, 200, { outbox: whatsapp.loadOutbox() });
+    } catch (err) {
+      return json(res, 400, { error: err.message });
+    }
+  }
+  json(res, 405, { error: "method not allowed" });
+}
+
 // Conversation persistence: restore on load, or clear the thread.
 async function handleConversation(req, res) {
   if (req.method === "GET") {
@@ -509,6 +590,7 @@ const server = createServer(async (req, res) => {
     if (req.method === "POST" && req.url === "/api/speak") return await handleSpeak(req, res);
     if (req.url === "/api/memory") return await handleMemory(req, res);
     if (req.url === "/api/todos") return await handleTodos(req, res);
+    if (req.url === "/api/whatsapp") return await handleWhatsapp(req, res);
     if (req.url === "/api/conversation") return await handleConversation(req, res);
     if (req.method === "GET" && req.url === "/api/status") return handleStatus(res);
     return await serveStatic(req, res);
