@@ -76,20 +76,24 @@ is read aloud by a text-to-speech voice, so:
   Keep each memory a single specific sentence. Do not save fleeting context or
   anything she would not want kept. Confirm briefly in your spoken reply when
   you remember or update something.
-- You can forward things to people over WhatsApp, but you NEVER send. Calling
-  forward_via_whatsapp only STAGES the message in Cara's Outbox; it goes out
-  only when she taps Send herself. To forward an email, read the thread first,
-  compose a short WhatsApp message in Cara's voice, then stage it. Always tell
-  her it is staged and waiting for her tap — never say or imply it was sent. If
-  you do not have the recipient's number, ask for it or save it with
-  save_whatsapp_contact. Recipients must have joined the WhatsApp sandbox.
+- You can forward things to people over WhatsApp. To forward an email, read the
+  thread first, then compose a short WhatsApp message in Cara's voice and stage
+  it with forward_via_whatsapp (this does NOT send — it adds it to her Outbox).
+  After staging, read the message back to her and ask if you should send it now.
+  Only when she clearly confirms ("yes", "send it") do you call send_whatsapp
+  with that message's id to actually send it. If she does not confirm, leave it
+  staged. Never call send_whatsapp without an explicit confirmation in the same
+  conversation, and never say a message was sent unless send_whatsapp succeeded.
+  She can also tap Send on the Outbox card herself. If you do not have the
+  recipient's number, ask for it or save it with save_whatsapp_contact.
+  Recipients must have joined the WhatsApp sandbox first.
 - You do not yet have calendar, Slack, or Stripe. If asked for those, say so
   plainly and offer to note it for when that connector is wired up.
 - Never invent facts, deadlines, or data. Honor the guardrails above.`;
 
 // Built fresh each turn so memory edits take effect without a restart.
 function buildSystemPrompt() {
-  return SYSTEM_BASE + memory.factsForPrompt() + todos.todosForPrompt();
+  return SYSTEM_BASE + memory.factsForPrompt() + todos.todosForPrompt() + whatsapp.pendingForPrompt();
 }
 
 const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
@@ -304,6 +308,20 @@ const TOOLS = [
       required: ["name", "number"],
     },
   },
+  {
+    name: "send_whatsapp",
+    description:
+      "Actually SEND a staged WhatsApp message from the Outbox by its id. Call this ONLY after Cara has explicitly confirmed out loud that she wants it sent now. If she has not confirmed, do not call this.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: {
+          type: "integer",
+          description: "The staged message id (shown in your context). Omit only if exactly one is staged.",
+        },
+      },
+    },
+  },
 ];
 
 // Run one tool call. Pushes a human-readable label onto `actions` for the UI.
@@ -387,6 +405,22 @@ async function executeTool(name, input, actions) {
     const c = whatsapp.saveContact(input.name, input.number);
     actions.push(`saved WhatsApp contact ${c.name}`);
     return `Saved ${c.name} (${c.number}) as a WhatsApp contact.`;
+  }
+  if (name === "send_whatsapp") {
+    let id = input.id;
+    if (id == null) {
+      const p = whatsapp.pending();
+      if (!p.length) return "Nothing is staged to send.";
+      if (p.length > 1) {
+        return `More than one message is staged (${p
+          .map((x) => `id ${x.id} to ${x.toLabel}`)
+          .join(", ")}). Ask Cara which one.`;
+      }
+      id = p[0].id;
+    }
+    const sent = await whatsapp.sendStaged(id); // throws on Twilio error → surfaced to Billi
+    actions.push(`SENT a WhatsApp to ${sent.to}`);
+    return `Sent the WhatsApp to ${sent.to} (Twilio id ${sent.sid}).`;
   }
   throw new Error(`Unknown tool: ${name}`);
 }

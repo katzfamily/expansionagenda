@@ -132,6 +132,22 @@ export function discard(id) {
   return true;
 }
 
+// Pending (staged, not yet sent) messages.
+export function pending() {
+  return loadOutbox().filter((x) => x.status === "pending");
+}
+
+// Render pending messages for the system prompt so Billi knows what is staged
+// and can send the right one by id once Cara confirms out loud.
+export function pendingForPrompt() {
+  const p = pending();
+  if (!p.length) return "";
+  const list = p
+    .map((x) => `[${x.id}] to ${x.toLabel}: "${x.body.slice(0, 80)}${x.body.length > 80 ? "…" : ""}"`)
+    .join("\n");
+  return `\n\n---\n\nStaged WhatsApp messages waiting in Cara's Outbox (not sent). Send one\nwith send_whatsapp by its id only after Cara confirms out loud:\n${list}`;
+}
+
 // Actually send a staged message through Twilio. Called only by the send
 // endpoint, which the dashboard Send button triggers.
 export async function sendStaged(id) {
