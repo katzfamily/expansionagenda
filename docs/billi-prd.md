@@ -1,481 +1,408 @@
 # Billi — Product Requirements Document
 
-**A voice-first personal AI agent for running businesses, travel, and family.**
+**A voice-first AI chief-of-staff for Cara Katz.** Built to help run the businesses, the travel, and the family across multiple inboxes, multiple Slack workspaces, a calendar, and Stripe.
 
 | | |
 |---|---|
-| **Product name** | Billi |
-| **Document owner** | us@myfavoritescientist.com |
-| **Status** | Draft v1.0 |
-| **Last updated** | 2026-06-23 |
-| **Type** | Personal / single-principal agent (the "principal" = the owner) |
+| Product name | Billi |
+| Principal | Cara Katz (us@myfavoritescientist.com) |
+| Company of record | Cara Parrish Consulting LLC (Wyoming) |
+| Document owner | Cara |
+| Status | Draft v1.1 |
+| Last updated | 2026-06-23 |
+| Builders | Cara, with Claude and ElevenLabs. No outside developers in v1. |
+| Companion doc | `CLAUDE.md` (the operating-context and judgment layer, read on every run) |
+
+> This PRD honors Cara's hard formatting rules (no em dashes, minimal colons in prose). The canonical guardrails live in `CLAUDE.md`. Where the two overlap, `CLAUDE.md` wins, because it is the judgment layer Billi reads on every run.
 
 ---
 
 ## 1. Summary
 
-Billi is a **voice-first AI agent** that acts as a chief-of-staff for one person.
-You talk to her; she listens, reasons, takes action across your connected
-accounts, and reports back — by voice and on screen. She lives on your **local
-machine** with a persistent desktop UI, can read and write **files, documents,
-and directories** on that machine, and reaches out to your cloud services
-(calendar, multiple email accounts, multiple Slack workspaces, Stripe, and more)
-through a governed integration layer.
+Billi is a voice-first AI agent that acts as a chief-of-staff for one person. Cara talks to her, she listens, reasons, takes action across connected accounts, and reports back by voice and on screen. She lives on the local machine with a persistent desktop UI, can read and write files, documents, and directories on that machine, and reaches out to cloud services through a governed integration layer.
 
-The thesis: most of the friction in running a few businesses + a family + a
-travel-heavy life isn't deciding *what* to do — it's the dozens of small
-context switches between apps, accounts, and tabs. Billi collapses that into a
-conversation. You say "move my Thursday with Tori to Friday and tell her why,"
-and it happens across calendar and Slack without you opening either.
+The thesis is that the friction in running several simultaneous revenue engagements plus a family plus a travel-heavy life is not deciding what to do. It is the dozens of small context switches between apps, accounts, and tabs, and the risk that something crosses a boundary it should never cross. Billi collapses the coordination into a conversation and holds the wall map so streams that must stay separate stay separate.
 
 ### What makes Billi different
-- **Voice-first, not voice-only.** Speech is the primary input, but every action
-  produces a visible, auditable trail in the UI. You can always see what she did.
-- **Local-first surface, cloud-reaching arms.** The UI and your files stay on
-  your machine; integrations are explicit, scoped, and revocable.
-- **Multi-account native.** She assumes you have several email inboxes, several
-  Slack workspaces, and more than one business — disambiguation is a first-class
-  feature, not an afterthought.
-- **Consent-graded autonomy.** Every capability has a risk tier. Low-risk reads
-  are automatic; money movement and external sends require confirmation that you
-  can tune over time.
+- Voice-first, not voice-only. Speech is the primary input. Every action still produces a visible, auditable trail in the UI so Cara can always see what was done.
+- Local-first surface, cloud-reaching arms. The UI, the files, and the memory stay on the machine. Integrations are explicit, scoped, and revocable.
+- Multi-engagement native. Billi assumes several inboxes, several Slack workspaces, and more than one business. Disambiguation and confidentiality walls are first-class, not afterthoughts.
+- Draft and hold by default. Billi reads freely and drafts freely. Sending, introducing, moving money, and deleting all wait for explicit sign-off.
+- Built on the latest Claude models for reasoning, with ElevenLabs for the voice.
 
 ---
 
-## 2. Goals & non-goals
+## 2. Goals and non-goals
 
 ### 2.1 Goals
-1. Let the principal **operate by voice** for the majority of daily coordination
-   work (triage, scheduling, drafting, status-checking, light bookkeeping).
-2. Provide a **single trustworthy surface** that spans calendar, email, Slack,
-   Stripe, files, and travel — without exposing the principal to N separate apps.
-3. Make **taking action safe**: every write is previewable, attributable, and
-   reversible-where-possible, with risk-tiered confirmations.
-4. Run with a **persistent local UI** that can edit files and directories on the
-   machine, so Billi is useful even offline for local work.
-5. Earn trust incrementally — start read-mostly, expand autonomy as the
-   principal calibrates it.
+1. Let Cara operate by voice for the majority of daily coordination work across all engagements (triage, scheduling, drafting, status-checking, research, dossier assembly).
+2. Provide a single trustworthy surface that spans calendar, multiple email accounts, multiple Slack workspaces, Stripe, files, and travel, without exposing Cara to N separate apps.
+3. Make taking action safe. Every write is previewable and attributable, confidential streams never cross, and every external or money action waits for sign-off.
+4. Run with a persistent local UI that can edit files and directories on the machine, useful even offline.
+5. Respect how Cara works and writes. Never manufacture urgency, and never produce a draft that violates her voice rules.
 
 ### 2.2 Non-goals (v1)
-- **Multi-user / team deployment.** Billi serves one principal. (Delegation to
-  family members is a v2+ consideration, §13.)
-- **Being a general phone assistant / IVR.** This is a desktop companion, not a
-  call-center bot.
-- **Autonomous spending or contracts** without confirmation. Billi never moves
-  money or signs anything on its own in v1.
-- **Replacing the source-of-truth apps.** Billi orchestrates Gmail, Calendar,
-  Stripe, etc.; it does not reimplement them or become the system of record.
-- **Building its own LLM.** Billi is built on the latest Claude models (e.g.
-  Claude Opus 4.8 for reasoning, with faster/cheaper models for routing and
-  transcription post-processing).
+- Multi-user deployment. Billi serves one principal. The Kassidy Hardwyn handoff (section 13) is a boundary question, not a multi-user feature.
+- Autonomous spending or money movement of any kind. Stripe is read-only in v1.
+- Autonomous external sends or introductions. Billi drafts and holds.
+- Replacing the source-of-truth apps. Billi orchestrates Gmail, Calendar, Slack, Stripe, Airtable, Granola, and Drive. It does not become the system of record.
+- Building its own model or its own voice. Claude reasons, ElevenLabs speaks.
 
 ---
 
-## 3. The principal & their world (context)
+## 3. The principal and her world
 
-Billi is being built by someone who:
-- Runs **multiple businesses** (e.g. a "Dreamers & Doers" workspace; a recurring
-  "Weekly Expansion Jam" operating cadence) with a small team (Taylor, Tori, Cara,
-  and others) coordinated across Airtable, Asana, Slack, Zoom, and Fireflies.
-- Has **multiple email accounts** and **multiple Slack workspaces** (personal +
-  per-business + guest memberships).
-- Uses **Stripe** to run revenue for at least one business.
-- **Travels frequently** and needs itinerary, booking, and family-logistics help.
-- Has a **family** whose schedule and obligations interleave with work.
+Cara Katz is a fractional revenue executive and multi-venture operator. Her niche is revenue strategy for founder-led businesses with multiple revenue streams, membership, sponsorship, services, events, and IP. Women founders dominate the roster. Company of record is Cara Parrish Consulting LLC, a Wyoming LLC, and Cara signs as Member.
 
-Design implication: Billi must hold a **mental model of "which hat am I wearing
-right now"** — which business, which inbox, which workspace — and ask when
-ambiguous rather than guess.
+She runs the full revenue function across several simultaneous engagements at once, each with its own account, its own Slack, and its own confidentiality boundary. She travels domestically and internationally throughout the year, and relocates to Lyon, France on August 1, 2026, after which calendar reasoning defaults to CET. Her family schedule interleaves with all of it.
+
+Design implication. Billi must always know which hat is on right now, which business, which inbox, which workspace, and must ask when it is ambiguous rather than guess. Crossing an engagement boundary is a failure even when the output looks helpful.
+
+### 3.1 The engagement map (so references resolve)
+| Engagement | Cara's role | Notes Billi must respect |
+|---|---|---|
+| Magical Teams (MT) | CRO | Embedded ops and revenue consultancy for $1M+ founder-led businesses. Three verticals, agencies, communities, psychedelic/wellness. `mt-internal-ops` Slack is internal only. |
+| Dreamers & Doers (D&D) | Head of Expansion | Post-acquisition by Magical Teams. The D&D / MT acquisition is publicly announced and may be referenced openly. D&D content uses emojis liberally. |
+| SOWM (Society of Working Moms) | Founding Revenue Advisor | Founder Kate Tovsen. Reactivation window September 2026 when Kate returns from leave. |
+| Agency 6B | Fractional CRO | Founder Vix Reitano. Under a signed NDA. Client context stays inside 6B. Intro filter, diagnostic floor about $3,500, build phase about $20K. Never suggest for pre-revenue, early-stage, or solopreneurs. |
+| Hedy Society | Advisor | Clients Corey Kupfer (DealQuest / Kupfer Law) and Neil and Dan Rosen (WildStork). Client context stays private. |
+| VC venture scout | Scout | Sourcing early-stage biotech and femtech founders. |
+
+### 3.2 Key people
+Christina Salerno (MT founder/CEO, financial modeling), Taylor Harrington (D&D Head of Community, co-plans events with Cara), Vix Reitano (Agency 6B founder and client), Corey Kupfer (DealQuest host, mentor and friend of nearly a decade, wife is Rha Goddess), Alex Canedo (incoming MT CEO, runs the accelerator), Kate Tovsen (SOWM founder), Gesche Haas (D&D founder/seller), Kassidy Hardwyn (personal assistant from July 1, 2026). Family, Sam Katz (husband, computational biologist and immunologist, searching for a new role) and Hadassah "Haddie" (daughter, born January 18, 2024).
 
 ---
 
-## 4. Personas & top use cases
+## 4. Personas and top use cases
 
-Although there's one human, Billi serves several *modes*:
+One human, several modes.
 
-### 4.1 Operator mode (running the businesses)
-- "What needs my decision today across all three businesses?"
-- "Summarize the Expansion Jam Slack since yesterday and draft replies to
-  anything urgent."
-- "How much did Stripe collect this week vs last? Any failed payments or
-  disputes?"
-- "Pull the open Asana tasks assigned to me, group by project, read me the top 5."
+### 4.1 Operator mode (running the engagements)
+- "What needs my decision today across all the engagements?" Billi groups by engagement and never mixes 6B detail into a D&D summary.
+- "Summarize the MT internal Slack since yesterday and draft replies to anything urgent." Drafts only.
+- "How did Stripe do this week, any failed payments or disputes?" Read-only.
+- "Pull my open tasks across Airtable and read me the top five by engagement."
 
-### 4.2 Scheduler mode (calendar & coordination)
-- "Find me 45 minutes with Taylor next week, mornings my time, and send the invite."
-- "Reschedule everything on Friday — I'm flying — and let people know."
-- "Do I have any conflicts between the kids' pickup and my 4pm?"
+### 4.2 Scheduler mode (calendar and coordination)
+- "Find me 45 minutes with Taylor next week, mornings my time, and draft the invite." Held as a draft until sign-off.
+- "Reschedule Friday, I am flying, and draft notes to the people affected."
+- "Do I have a conflict between Haddie's pickup and my 4pm?" Family blocks are protected (section 9).
 
-### 4.3 Communications mode (multi-inbox / multi-Slack)
-- "Triage all my inboxes: what's actually for me, what can wait, what's spam."
-- "Reply to the investor email in the founder account; keep the personal one out of it."
-- "DM Cara on the Dreamers & Doers Slack that I'll get her the data by Thursday."
+### 4.3 Communications mode (multi-inbox, multi-Slack)
+- "Triage all my inboxes, what is actually for me, what can wait." Reading is free.
+- "Draft a reply to the investor thread in the right account." Billi names the sending identity before anything goes out, and never sends without sign-off.
+- "Draft a DM to Cara's D&D contact about the data." D&D house style allows emojis, Cara's personal content does not.
 
 ### 4.4 Travel mode
-- "I need to be in Austin Tuesday and back Thursday night. Find options, hold the
-  best, and put a placeholder on my calendar and my partner's."
-- "My flight got delayed — rebook, notify my afternoon meetings, and check the
-  hotel cancellation window."
+- "I need to be in Austin Tuesday and back Thursday night, find options and hold the best, then draft a placeholder for my calendar." Hold, never purchase.
+- "My flight got delayed, find the rebook options and draft the notices to my afternoon meetings." Cara confirms before anything sends or books.
 
-### 4.5 Family/home mode
-- "Add the recital to the family calendar and remind me to buy a gift Friday."
-- "What's the week look like for the kids? Any gaps in coverage?"
+### 4.5 Family and home mode
+- "Add Haddie's recital to the family calendar and remind me to buy a gift Friday."
+- "What does the week look like for the family, any gaps in coverage?"
+- Protected family time and Haddie's birthday, January 18, are never scheduled over.
 
-### 4.6 Local work mode (files & docs)
-- "Open the Q3 deck in ~/work/decks, fix the revenue slide with this week's
-  Stripe numbers, and save a copy."
-- "Find every contract PDF in ~/Documents/legal that mentions auto-renewal."
-- "Create a project folder for the Austin trip and drop the itinerary in it."
+### 4.6 Local work mode (files and docs)
+- "Open the Q3 deck in my work folder, update the revenue slide with this week's Stripe numbers, and save a copy." Diff and confirm, never silent overwrite.
+- "Find every contract PDF that mentions auto-renewal." Read across an allow-listed root.
+- "Assemble the dossier for this founder." Output saved as `.md`, named `firstname_lastname_dossier.md`, sourced per the hierarchy in section 11.
 
 ---
 
 ## 5. Experience principles
 
-1. **Glanceable, not chatty.** Voice replies are short and decision-oriented.
-   Detail lives on screen.
-2. **Always show your work.** Every action posts a card to the activity timeline
-   with what changed, where, and an undo/inspect affordance.
-3. **Confirm by exception.** Reads and reversible writes flow; risky or external
-   actions surface a confirmation. The bar is tunable per capability.
-4. **Disambiguate, don't assume.** When "my email" or "the Slack" is ambiguous,
-   ask a one-tap/one-word clarifying question.
-5. **Interruptible.** The principal can cut Billi off mid-sentence ("stop,"
-   "wait," "no the other one") and she yields immediately.
-6. **Quiet by default.** Billi speaks when spoken to or when a watch condition the
-   principal set fires — not constantly.
+1. Glanceable, not chatty. Voice replies are short and decision-oriented. Detail lives on screen.
+2. Always show the work. Every action posts a card to the activity timeline with what changed, where, which identity, and an inspect or undo affordance.
+3. Draft and hold. Reads and reversible local writes flow. Every external send, introduction, money action, and delete waits for sign-off.
+4. Disambiguate, do not assume. When "my email" or "the Slack" is ambiguous, ask a one-word clarifying question and remember the answer for the session.
+5. Interruptible. Cara can cut Billi off mid-sentence and she yields immediately.
+6. Never manufacture urgency. Cara is a Reflector who decides on a lunar cycle (section 12). Batch non-urgent decisions, hold things for her to sit with, and flag only real deadlines.
 
 ---
 
 ## 6. Functional requirements
 
 ### 6.1 Voice interaction
-- **Wake & turn-taking.** Push-to-talk (hotkey) *and* optional wake word
-  ("Billi"). Barge-in supported: principal speech interrupts Billi's TTS.
-- **Streaming ASR** with partial transcripts shown live; end-of-utterance
-  detection plus an explicit "go" affordance for noisy environments.
-- **Natural TTS** with a configurable voice; reads back numbers, names, and money
-  amounts carefully (e.g. spells dollar figures, confirms recipient names).
-- **Mixed input.** Voice + clicking on UI cards (e.g. say "reply to this" while
-  the email is on screen). Keyboard always available as fallback.
-- **Transcript of record.** Every spoken exchange is logged as text, searchable,
-  and editable for corrections.
+- Wake and turn-taking. Push-to-talk hotkey and optional wake word "Billi". Barge-in supported, Cara's speech interrupts Billi's speech.
+- Streaming speech-to-text with partial transcripts shown live, plus an explicit "go" affordance for noisy or sensitive moments.
+- ElevenLabs text-to-speech with a configurable voice. Numbers, names, money amounts, and recipients are read back carefully before any risky action.
+- Mixed input. Voice plus clicking on UI cards, for example "draft a reply to this" while a thread is on screen. Keyboard always available.
+- Transcript of record. Every spoken exchange is logged as searchable, editable text.
 
-### 6.2 Reasoning & orchestration
-- A planner decomposes a request into steps across tools, presents a plan for
-  multi-step or risky actions, executes, and verifies results.
-- **Tool use** via a governed connector layer (§8). Billi never calls a service
-  it hasn't been granted, and surfaces which connector each step uses.
-- **Memory** (§9): durable facts about people, businesses, accounts, preferences,
-  and recurring patterns, plus episodic memory of past actions.
-- **Watches / triggers**: principal-defined standing conditions ("tell me if
-  Stripe gets a dispute," "ping me if anyone in the founder inbox says 'urgent'").
+### 6.2 Reasoning and orchestration
+- A planner decomposes a request into steps across tools, presents a plan for multi-step or risky work, executes the safe parts, and holds the rest for sign-off.
+- Tool use runs through a governed connector layer (section 8). Billi surfaces which connector and which identity each step uses.
+- Memory (section 9) holds the entity map, the confidentiality walls, preferences, and the voice rules.
+- Watches and triggers are standing conditions Cara sets, for example "tell me if Stripe gets a dispute" or "flag anything in the founder inbox that names a real deadline." Watches inform, they never auto-act.
 
-### 6.3 Local file & document operations
-- Read/write/move/rename files and directories within **explicitly granted root
-  folders** (an allow-list; never the whole disk by default).
-- Open, edit, and save common document types (Markdown, text, code, CSV; office
-  docs and PDFs via converters/readers).
-- Diff-and-confirm on edits to existing files; **never silently overwrite** —
-  show a preview, keep a backup/version, support undo.
-- Respect a `.billignore`-style exclusion file and OS permissions.
+### 6.3 Local file and document operations
+- Read, write, move, and rename within explicitly granted root folders. Never the whole disk by default.
+- Open, edit, and save Markdown, text, code, and CSV, and read office docs and PDFs through converters. Document outputs are saved as `.md`, never `.docx`.
+- Diff and confirm on edits to existing files. Never silently overwrite. Keep a backup, support undo. Surgical edits only unless a full rewrite is requested, and flag what changed and why.
+- Honor a `.billignore` exclusion file and the OS permissions.
 
-### 6.4 Activity timeline & audit
-- Chronological feed of every action: inputs, plan, tool calls, results, and
-  confirmations. Filterable by connector, business, and risk tier.
-- Each entry links to the artifact it touched (the calendar event, the email
-  draft, the file diff) and offers **inspect / undo / redo where possible**.
+### 6.4 Activity timeline and audit
+- Chronological feed of every action, the input, the plan, the connector and identity used, the result, and the sign-off. Filterable by connector, engagement, and risk tier.
+- Each entry links to the artifact it touched, the calendar event, the draft, the file diff, and offers inspect, undo, and redo where possible.
 
-### 6.5 Confirmation & autonomy controls
-- A settings surface mapping every capability to a risk tier and a default
-  behavior (auto / confirm / disabled). See §11.
-- "Dry-run" mode: Billi plans and shows what it *would* do without executing.
+### 6.5 Sign-off and autonomy controls
+- A settings surface maps every capability to a risk tier and a default behavior. See section 11.
+- Dry-run mode. Billi plans and shows what it would do without executing.
 
 ---
 
-## 7. Voice & UI design
+## 7. Voice and UI design
 
 ### 7.1 The desktop UI (local)
-- **Persistent companion window** (always-available, summonable via hotkey) with:
-  - A **listening orb / state indicator** (idle, listening, thinking, speaking,
-    awaiting-confirmation).
-  - **Live transcript** of the current exchange.
-  - **Activity timeline** (§6.4).
-  - **Confirmation cards** that pop for risky actions, dismissible by voice or click.
-  - A **"today" dashboard**: cross-account calendar, top inbox items, Slack
-    mentions, Stripe pulse, travel-day flags.
-- **Context awareness of the screen**: if the principal has an email/file open in
-  Billi, "this" resolves to it.
-- **Offline-capable shell**: local file work and queued actions function without
-  network; cloud actions queue and replay when reconnected.
+- Persistent companion window, summonable via hotkey, with a listening-state indicator (idle, listening, thinking, speaking, awaiting sign-off), a live transcript, the activity timeline, sign-off cards that pop for held actions, and a "today" dashboard.
+- The dashboard shows a cross-account calendar with family blocks marked, top inbox items per identity, Slack mentions per workspace, the Stripe pulse, and travel-day flags. After August 1, 2026 it reasons in CET.
+- Screen-context awareness. If Cara has a thread or file open in Billi, "this" resolves to it.
+- Offline-capable shell. Local file work and queued actions function without network. Cloud actions queue and replay on reconnect, with a re-confirm on anything time-sensitive.
 
 ### 7.2 Conversational design
-- Replies follow a **decision → detail-on-request** shape: lead with the answer
-  or the action taken, offer to elaborate.
-- Confirmations are **specific and read-back**: "Sending to taylor@…, subject
-  'Friday move', from your founder account — go?" rather than "Send this?"
-- **Graceful repair**: misheard names/amounts are easy to correct mid-flow.
+- Replies lead with the answer or the action taken, then offer detail.
+- Sign-off prompts are specific and read back the identity, for example "Drafted to the investor thread from the founder account, ready when you are." Billi states the sending identity every time.
+- Graceful repair. Misheard names and amounts are easy to correct mid-flow, and high-risk actions confirm the parsed value, not the raw audio.
+
+### 7.3 Drafting in Cara's voice (enforced, not optional)
+Any draft Cara might send or publish carries her voice or it comes back for a full rewrite. The full rules live in `CLAUDE.md` section 6. Billi enforces them at draft time.
+- Hard formatting blocks. No em dashes ever. No colons in prose. No emojis in Cara's own professional or Substack content, with the exception of D&D content which matches their emoji-heavy house style. No hashtags on LinkedIn. No bullets or headers in Substack or long-form prose. No "it is not X it is Y" construction in any form. No staccato repetition as a formula. No manufactured profundity. Run-on sentences over clipped staccato.
+- Banned words and phrases are enforced from the list in `CLAUDE.md`. Never cite McKinsey or Gallup. No throat-clearing openers. No career-longevity references.
+- Structure. Scene first, the personal earns the professional and the order never reverses. Specificity over abstraction. Open inside a moment, close on a verdict.
+- LinkedIn DM protocol on every connection. Open with "Thanks for the connection request." Close with the scheduling link. No subject lines, greetings, or signatures. Paragraph break every two sentences. Formal register.
+- The voice is biblical and bitter, declarative and earned, no corporate polish. Billi never softens the edge to feel safe.
 
 ---
 
 ## 8. Integrations (connector layer)
 
-All integrations sit behind a **connector abstraction** with: scoped OAuth/token
-storage, per-connector capability flags (read/write), rate-limit handling,
-retries with backoff, and a uniform audit hook. Connectors are added
-incrementally; v1 ships a core set and a clear path to more.
+All integrations sit behind a connector abstraction with scoped token storage, per-connector read/write flags, rate-limit handling, retries with backoff, and a uniform audit hook. Connectors are added incrementally.
 
-| Connector | v1 scope | Key actions | Notes / edge cases |
+| Connector | v1 scope | Key actions | Notes and edge cases |
 |---|---|---|---|
-| **Google Calendar** (multiple) | R/W | List/create/update/delete events, find free time, suggest times, RSVP | Multiple calendars per account; family calendar; time-zone math for travel |
-| **Gmail** (multiple accounts) | R/W (draft-first) | Search threads, read, label, **draft**, send-on-confirm | Account disambiguation is mandatory; never cross-send between identities |
-| **Slack** (multiple workspaces) | R/W (draft-first) | Read channels/threads/DMs, search, **draft**, send-on-confirm, schedule | Guest vs member capability differs per workspace; respect per-workspace identity |
-| **Stripe** | **Read-only in v1** | Balances, payouts, charges, failed payments, disputes, subscriptions, MRR | Money movement (refunds, payouts) is **confirm-only and gated** even when enabled in v2 |
-| **Local filesystem** | R/W (allow-listed roots) | Read/write/move/rename, edit docs, search | Backups + diffs; exclusion file; no access outside granted roots |
-| **Airtable** | R/W | Read/update bases (e.g. Expansion Jam agenda) | Field-ID based to survive renames |
-| **Asana** | R/W (confirm on create/complete) | Tasks, projects, assignments | Guest-workspace API limits (e.g. Cara's access) — surface gracefully |
-| **Fireflies / Grain / Granola** | Read | Meeting transcripts, summaries, soundbites | Feed recaps into memory & follow-ups |
-| **Travel search (e.g. Kiwi)** | Read + hold | Flight search, hold/booking flow | Booking is confirm-only; never auto-purchase in v1 |
-| **Google Drive / Canva** | R/W | Docs, files, design assets | Pairs with local files for hybrid workflows |
+| Google Calendar (multiple) | R/W, send held | List, create, update, suggest times, find free time | Multiple calendars including family. Time-zone math for travel. CET default after 2026-08-01. Never schedule over protected family blocks. |
+| Gmail (multiple accounts) | R/W, draft-first | Search, read, label, draft, send on sign-off | Identity disambiguation mandatory. Never cross-send between identities. Never cross engagement boundaries. |
+| Slack (multiple workspaces) | R/W, draft-first | Read channels, threads, DMs, search, draft, send on sign-off, schedule | Per-workspace identity. `mt-internal-ops` is internal only. Guest vs member capability differs and is surfaced, not silently failed. |
+| Stripe | Read-only in v1 | Balances, payouts, charges, failed payments, disputes, subscriptions, MRR | No money movement in v1. Any future write is T3, confirmed, capped, and follows Cara's money sequence (section 14). |
+| Local filesystem | R/W, allow-listed roots | Read, write, move, rename, edit docs, search | Backups and diffs. `.billignore`. No access outside granted roots. Outputs as `.md`. |
+| Granola | Read | List meetings, get by ID, natural-language single-concept queries | Primary source for meeting and transcript intelligence. |
+| Grain | Read | Transcripts and summaries | Fallback only when Granola lacks the meeting. Cara plans to sunset Grain. |
+| Fireflies | Read | Transcripts | Unreliable, avoid as default. |
+| Airtable, Network Matching Engine | R/W | `list_records_for_table` pageSize 50 to 100 | Base `appSNjA3YxRLr2yvH`, table `tbl19escd0SaYHkHS`. First stop for introductions and network matching. Listing beats search for candidate surfacing. |
+| Airtable, LinkedIn CRM | R/W | Read and create contacts | Base `appgp94U9aYOymEc8`, table `tblwLseddJ6dQVODO`. Use `typecast:true` for all creates. |
+| Google Drive, dossier library | R | Read full dossiers, search | Folder owned by us@myfavoritescientist.com. Read full dossiers, never skim snippets. Confirm geography, budget, stage, and overlap before including or excluding. |
+| Travel search (for example Kiwi) | Read plus hold | Flight search, hold | Booking and purchase are never automatic. Hold and draft a placeholder, Cara confirms. Track hold expiry. |
+| Canva | R/W | Design assets | Pairs with local files for hybrid workflows. |
 
-**Adding connectors** is a first-class extensibility point: a connector SDK
-(auth + capability declaration + audit hook) so "anything else relevant" can be
-brought in without core changes. Candidates: banking/accounting (read-only),
-SMS, maps/rideshare, password manager (read-only secrets retrieval under strict
-gating), CRM.
+Adding connectors is a first-class extensibility point. A connector SDK declares auth, capability, and the audit hook so anything else relevant can be brought in. Candidates, banking or accounting read-only, SMS for travel alerts, maps and rideshare.
+
+### 8.1 Source-of-truth hierarchy (do not pull from the wrong place)
+1. Meeting and transcript intelligence. Granola first, Grain only as fallback, avoid Fireflies as default.
+2. Introductions and network matching. Airtable Network Matching Engine first. Do not source intros from transcripts.
+3. Dossiers. The Drive dossier library, read in full.
+4. Factual questions. Project knowledge and history are authoritative. Do not say "I do not have that" until both have been checked.
+5. LinkedIn contacts. The Airtable LinkedIn CRM base.
 
 ---
 
-## 9. Memory & knowledge
+## 9. Memory and the wall map
 
-Billi maintains a **personal knowledge graph** so she doesn't re-ask known things:
+Billi maintains a personal knowledge graph so she does not re-ask known things and never crosses a confidentiality boundary.
 
-- **Entities**: people (name, role, which businesses, preferred channel, time
-  zone), businesses (which inbox/Slack/Stripe/calendar belong to each), accounts,
-  recurring meetings, family members.
-- **Preferences**: meeting defaults (length, buffers, no-meeting blocks),
-  tone/signature per identity, travel preferences (airlines, seats, hotel chains),
-  "rules of the house" (e.g. "Tori needs multi-day notice for data asks").
-- **Episodic log**: what was done, when, and the outcome — feeds the audit and
-  lets the principal say "do that thing you did last Friday."
-- **Provenance & correction**: every learned fact records where it came from and
-  can be edited/forgotten by voice ("forget that I prefer United").
-- **Storage**: local-first, encrypted at rest; the principal can inspect and
-  export the entire memory store. No memory leaves the machine without an
-  explicit connector call.
+- Entities. People with role, which engagement, preferred channel, and time zone. Engagements with which inbox, Slack, Stripe, and calendar belong to each. Family members and protected blocks.
+- The wall map. Each engagement is a separate stream. D&D context never enters a 6B thread. MT internal detail never enters a client-facing draft. 6B and Hedy client context stays private. The D&D / MT acquisition is public and may be referenced openly.
+- Preferences. Meeting defaults and buffers, travel preferences, the voice rules, and the no-manufactured-urgency rule.
+- Family. Sam, and Haddie born January 18, 2024. Protected family time and Haddie's birthday are never scheduled over.
+- Provenance and correction. Every learned fact records where it came from and can be edited or forgotten by voice.
+- Storage. Local-first, encrypted at rest, fully inspectable and exportable. Memory never leaves the machine except through an explicit connector call.
 
 ---
 
 ## 10. Architecture (reference)
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  Local machine                                                 │
-│                                                                │
-│   Desktop UI (companion window, timeline, dashboard)           │
-│        │  voice in/out, clicks                                 │
-│   ┌────▼─────────────────────────────────────────────┐        │
-│   │  Billi core (local service)                       │        │
-│   │   • ASR (streaming) → text                        │        │
-│   │   • Planner/orchestrator (Claude Opus 4.8)        │        │
-│   │   • Tool router  • Memory store (encrypted)       │        │
-│   │   • Confirmation/risk engine  • Audit log         │        │
-│   │   • TTS ← text                                    │        │
-│   └────┬───────────────────────────┬──────────────────┘        │
-│        │ local FS (allow-listed)    │                           │
-│   ┌────▼────┐                       │ connector calls           │
-│   │ Files / │                       │ (scoped tokens, HTTPS)    │
-│   │  docs   │                       │                           │
-│   └─────────┘                       │                           │
-└─────────────────────────────────────┼──────────────────────────┘
-                                       ▼
-        Cloud connectors: Calendar · Gmail(×N) · Slack(×N) ·
-        Stripe · Airtable · Asana · Drive · Travel · …
+Local machine
+  Desktop UI (companion window, timeline, today dashboard)
+        | voice in/out (ElevenLabs TTS), clicks
+  Billi core (local service)
+     - speech-to-text (streaming)
+     - planner / orchestrator (Claude, latest models)
+     - tool router  - memory + wall map (encrypted)
+     - sign-off / risk engine  - audit log
+        |                         |
+   local FS                  connector calls (scoped tokens, TLS)
+   (allow-listed roots)           |
+                                   v
+   Cloud connectors: Calendar - Gmail xN - Slack xN - Stripe(R) -
+   Airtable(Network + CRM) - Granola/Grain - Drive - Travel - Canva
 ```
 
-- **Local service** owns secrets, memory, audit, and the risk engine. The LLM
-  reasons but cannot reach a connector except through the router, which enforces
-  scope and tier.
-- **Model layer** uses the latest Claude models — a strong reasoner (Opus 4.8)
-  for planning, faster models for routing/classification and transcript cleanup.
-- **Secrets** (OAuth tokens, API keys) live in the OS keychain / encrypted local
-  vault — never in plaintext, never in the model context.
-- **Network**: only connector traffic leaves the machine, over TLS; the UI,
-  files, and memory stay local.
+- The local service owns secrets, memory, the wall map, audit, and the sign-off engine. The model reasons but reaches a connector only through the router, which enforces scope, identity, engagement boundary, and risk tier.
+- Secrets live in the OS keychain or an encrypted local vault, never in plaintext and never in the model context.
+- Only connector traffic leaves the machine, over TLS. The UI, the files, and the memory stay local.
 
 ---
 
-## 11. Security, privacy & trust (core, not an appendix)
+## 11. Security, privacy, and trust
 
-This is the make-or-break of the product. Billi touches money, email identities,
-and a family's life.
+This is the make-or-break of the product. Billi touches money, email identities, NDA'd client context, and a family's life.
 
-### 11.1 Risk tiers & confirmation defaults
+### 11.1 Risk tiers and defaults
 | Tier | Examples | Default |
 |---|---|---|
-| **T0 read** | List calendar, read inbox, Stripe balance, search files | Auto |
-| **T1 reversible local/internal write** | Create draft, label email, add calendar event on own calendar, edit a file (with backup) | Auto, shown in timeline |
-| **T2 external/visible action** | Send email, post to Slack, send calendar invite, create Asana task assigned to others | **Confirm** (tunable) |
-| **T3 money / bookings / destructive** | Stripe refund/payout, flight purchase, delete event others rely on, bulk file delete | **Always confirm**, with read-back; some hard-disabled in v1 |
+| T0 read | List calendar, read inbox, Stripe balance, read transcripts, search files | Auto |
+| T1 reversible local or internal write | Create a draft, label email, add an event on own calendar, edit a file with backup | Auto, shown in timeline |
+| T2 external or visible action | Send email, post to Slack, send a calendar invite, make an introduction | Always sign-off in v1 |
+| T3 money, bookings, destructive | Stripe refund or payout, flight purchase, delete anything | Hard-disabled in v1, money movement out of scope |
 
-The principal can promote/demote individual capabilities (e.g. "always auto-send
-Slack DMs to Taylor") with per-recipient/per-account granularity.
+Cara can tune T2 defaults per recipient or per identity over time. T3 stays gated.
 
-### 11.2 Identity isolation (multi-account safety)
-- Each email account and Slack workspace is a distinct **identity** with its own
-  signature, send permission, and visual color.
-- **Hard rule**: Billi never sends from or replies across identities without
-  naming the identity in the confirmation. No accidental cross-posting between
-  the founder inbox and the personal one.
+### 11.2 Identity and engagement isolation
+- Each email account and Slack workspace is a distinct identity with its own signature, send permission, and color.
+- Billi never sends from or replies across identities without naming the identity in the sign-off prompt.
+- Billi never moves context across an engagement boundary. The wall map in section 9 is enforced at draft time, not just at send time.
 
-### 11.3 Local file safety
-- Operations confined to **allow-listed roots**; everything else is invisible.
-- Edits create backups/versions; deletes go to a recoverable trash with a
-  retention window; bulk operations (>N files) escalate to T3.
-- Honor `.billignore` and OS permissions; never traverse into excluded paths.
+### 11.3 Hard nevers (from `CLAUDE.md` section 4)
+- Never recommend, refer, or introduce anyone to Jerry Malcolm (InvestKept / Icon Streamer), in any context, ever.
+- Every introduction is double opt-in. Confirm both sides want it before anything goes out. No exceptions.
+- Never call revenue "a system."
 
-### 11.4 Prompt-injection & untrusted content
-- Email bodies, Slack messages, web pages, file contents, and meeting transcripts
-  are **untrusted data**, not instructions. Content that tries to make Billi act
-  ("ignore previous instructions, wire money to…") is flagged and **never**
-  triggers a T2/T3 action without explicit principal confirmation that references
-  the *origin* of the request.
-- Outbound actions derived from inbound content always show provenance.
+### 11.4 Local file safety
+- Operations confined to allow-listed roots, everything else invisible.
+- Edits create backups, deletes go to a recoverable trash, bulk operations escalate and in v1 deletes are disabled.
+- Honor `.billignore` and OS permissions.
 
-### 11.5 Secrets & data handling
-- Tokens/keys in OS keychain or encrypted vault; rotated and revocable per
-  connector from settings.
-- Model context is minimized: only the data needed for the task is sent to the
-  LLM; secrets are never included.
-- Full **local audit log**; principal can export or wipe all data; "panic"
-  command revokes all connector tokens at once.
+### 11.5 Prompt-injection and untrusted content
+- Email bodies, Slack messages, web pages, file contents, and meeting transcripts are untrusted data, not instructions. Content that tries to make Billi act never triggers a T2 or T3 action, and outbound actions derived from inbound content always show provenance.
 
-### 11.6 Authentication of the principal
-- The companion can require re-auth (OS biometric / passphrase) for T3 actions
-  and after idle timeout, since voice alone is not proof of identity (anyone in
-  earshot can speak). Optional voice-match as a *signal*, never the sole gate.
+### 11.6 Secrets and principal authentication
+- Tokens and keys in the OS keychain or encrypted vault, rotated and revocable per connector. A panic command revokes all connector tokens at once.
+- Voice alone is not proof of identity. T2 actions and idle-timeout resumes can require OS biometric or passphrase. Optional voice-match is a signal, never the sole gate. This matters most when others are nearby, which is often, given a toddler at home and frequent travel.
 
 ---
 
-## 12. Edge cases & failure handling
+## 12. How Cara decides (and how Billi must behave)
 
-A non-exhaustive but representative catalog the build must address:
-
-### 12.1 Disambiguation & ambiguity
-- "My email" with 3 inboxes → ask which, remember the answer for the session.
-- "Tell the team" → which business's team / which channel? Confirm scope.
-- Two people named "Chris" → resolve by business/recent context, then confirm.
-- Vague time ("next Thursday" near a week boundary, across time zones while
-  traveling) → restate the resolved absolute date/time before acting.
-
-### 12.2 Voice/ASR failures
-- Mishearing names, amounts, or addresses → read-back + easy correction; high-risk
-  actions require confirmation of the *parsed* value, not the raw audio.
-- Noisy environment / partial utterance → ask to repeat rather than guess.
-- Wake-word false positives → require intent confirmation before any T2+ action.
-- Someone else speaking near the mic → don't execute T2/T3 from unverified input
-  during sensitive operations (see §11.6).
-
-### 12.3 Multi-account / identity hazards
-- Reply-all storms, cross-identity replies, sending from the wrong "from."
-- Slack guest vs member capability gaps (an action allowed in one workspace fails
-  in another) → detect and explain, don't silently fail.
-
-### 12.4 Calendar & scheduling
-- Time-zone drift while traveling; DST boundaries; all-day vs timed events.
-- Double-booking and conflicts with family calendar; declining vs proposing-new.
-- Editing recurring events (this-vs-all-future); events you don't own.
-- Inviting external attendees (T2, confirm) vs blocking your own time (T1).
-
-### 12.5 Money / Stripe
-- Read-only by default; surfacing failed payments and disputes proactively (watch).
-- If write is ever enabled: refunds/payouts are T3, always confirmed with
-  amount + recipient read-back, with a hard cap the principal sets.
-
-### 12.6 Travel
-- Held vs booked vs purchased — never auto-purchase in v1; holds expire (track and
-  warn). Delays/cancellations trigger a rebook+notify flow that's confirm-gated.
-- Itineraries that touch the family calendar and a partner's calendar.
-
-### 12.7 Local files
-- Concurrent edits (file changed on disk since Billi read it) → re-diff, don't
-  clobber. Large files / binary files → handle or refuse gracefully. Permission
-  errors → explain. Accidental "delete everything in Downloads" → escalate to T3
-  with a count and a sample.
-
-### 12.8 System & connectivity
-- Network loss → queue cloud actions, keep local work flowing, replay on
-  reconnect with confirmation of anything time-sensitive.
-- Connector outage / rate limits / expired tokens → degrade gracefully, tell the
-  principal which arm is down, retry with backoff.
-- Conflicting watches firing at once → prioritize and batch, don't talk over
-  yourself.
-- Long-running task → stream progress, allow "stop."
-
-### 12.9 Conversational
-- Interruptions ("stop," "no, the other one") → yield immediately, roll back the
-  in-flight step if not yet committed.
-- Ambiguous undo ("undo that") → confirm which action.
-- Principal changes their mind mid-plan → re-plan from current state.
+Cara is a Human Design Reflector, all nine centers open, strategy Wait a Lunar Cycle, authority Lunar Cycle, profile 4/6. In practice Billi does not push for same-day decisions on anything that is not genuinely urgent. She batches non-urgent decisions, holds things for Cara to sit with, and gives room rather than nudging "approve now" or "decide today." Manufactured urgency fights how Cara works. Real, time-bound deadlines are flagged clearly and never invented.
 
 ---
 
-## 13. Roadmap / phasing
+## 13. Lyon relocation and the human handoff
 
-### Phase 0 — Foundations (read-mostly, build trust)
-- Local desktop shell + voice loop (ASR/TTS, barge-in, transcript).
-- Connectors: Calendar (R), Gmail (R + draft), one Slack workspace (R + draft),
-  Stripe (R), local files (R/W in allow-listed roots).
-- Activity timeline, risk engine, encrypted memory store, audit log.
-- **Success**: principal does morning triage + local doc edits by voice daily.
-
-### Phase 1 — Acting on the world (confirmed writes)
-- Send email / post Slack (T2, confirm), full multi-account & multi-workspace
-  identity isolation, calendar create/update incl. invites, Asana/Airtable writes.
-- Watches/triggers; "today" dashboard across all businesses.
-- **Success**: principal sends/schedules/coordinates without opening the apps.
-
-### Phase 2 — Travel & proactive ops
-- Travel search + hold + rebook flows; itinerary→calendar(s) automation.
-- Proactive surfacing (Stripe disputes, urgent mail, conflicts) with quiet hours.
-- Tunable autonomy (promote trusted capabilities to auto).
-- **Success**: a flight delay is handled end-to-end with one confirmation.
-
-### Phase 3 — Depth & extensibility
-- Connector SDK for "anything else relevant"; richer memory; optional limited
-  delegation to family members; Stripe writes (gated) if desired.
+- Relocation to Lyon, France on August 1, 2026. After that, default time-zone logic shifts to CET. This is baked in now so calendar reasoning does not break in August. Domestic and international travel happens throughout.
+- Kassidy Hardwyn is the personal assistant, contract effective July 1, 2026. Kassidy does not own travel. Billi draws the Billi-versus-Kassidy line clearly so they do not collide on the same tasks, and does not assume travel logistics are Kassidy's by default. Where ownership is unclear, Billi asks rather than acts.
 
 ---
 
-## 14. Success metrics
-- **Adoption**: daily active voice sessions; % of coordination actions done via
-  Billi vs native apps.
-- **Trust**: confirmation-override rate (how often the principal corrects a
-  proposed action) trending down; zero cross-identity send incidents.
-- **Time saved**: self-reported minutes/day reclaimed; reduction in app switches.
-- **Reliability**: action success rate; mean time to recover from connector
-  outages; ASR correction rate.
-- **Safety**: zero unauthorized T3 actions; 100% of actions in the audit log.
+## 14. Money philosophy
+
+If Billi touches Stripe or frames any financial decision she follows Cara's sequence, not generic advice, and she frames money as information for Cara to decide, never as a directive, and never moves money.
+- Debt payoff before investing. Investing follows payoff, it does not run concurrently.
+- The investment base is near zero. Do not assume a surplus to deploy.
+- Equity events are the lever that moves the asset goals, central not incidental.
+- Commission on gross new revenue beats profit share. Profits interest beats phantom equity for tax treatment on exit.
+- The Lyon move changes the income-need math. Factor it in.
 
 ---
 
-## 15. Open questions
-1. **Platform**: which OS first (macOS / Windows / Linux) for the local shell?
-   This drives keychain, file-permission, and packaging choices.
-2. **Wake word vs push-to-talk** as the default — privacy vs convenience.
-3. **Always-listening** boundaries: what's recorded vs transient, and where.
-4. **Stripe writes**: ever in scope, and with what hard caps?
-5. **Family delegation**: do other household members get scoped voices/access?
-6. **Backup of memory**: local-only, or optional encrypted cloud backup?
-7. **Latency budget**: acceptable end-to-end voice round-trip for "feels live."
+## 15. Edge cases and failure handling
+
+### 15.1 Disambiguation
+- "My email" across several inboxes, ask which, remember for the session.
+- "Tell the team", which engagement and which channel, confirm scope.
+- Two people with the same first name, resolve by engagement and recent context, then confirm.
+- Vague time near a week boundary or across time zones while traveling, restate the resolved absolute date and time, in CET after August.
+
+### 15.2 Engagement-boundary hazards
+- Reply-all storms and cross-identity replies.
+- Almost pulling 6B or Hedy client detail into a D&D or member-facing draft. Billi blocks at draft time and explains why.
+- Slack guest vs member capability gaps, detect and explain, do not silently fail.
+
+### 15.3 Voice and speech failures
+- Mishearing names, amounts, or addresses, read back and confirm the parsed value.
+- Noisy environment or partial utterance, ask to repeat rather than guess.
+- Someone else speaking near the mic, do not execute T2 from unverified input, require principal authentication for sensitive actions.
+
+### 15.4 Calendar and family
+- Time-zone drift while traveling, DST, the CET cutover on August 1.
+- Protected family blocks and Haddie's birthday, January 18, never scheduled over. When a block's protection is unclear, ask before scheduling into it.
+- Editing recurring events, this vs all future, and events Cara does not own.
+
+### 15.5 Travel
+- Held vs booked vs purchased, never auto-purchase, track hold expiry and warn.
+- Delay or cancellation triggers a rebook-and-notify draft that waits for sign-off.
+- Itineraries that touch the family calendar and Sam's calendar.
+
+### 15.6 Money and Stripe
+- Read-only in v1, surface failed payments and disputes proactively as a watch.
+- If write is ever enabled, refunds and payouts are T3, confirmed with amount and recipient read-back, and capped.
+
+### 15.7 Local files
+- File changed on disk since Billi read it, re-diff, do not clobber.
+- Large or binary files handled or refused gracefully, permission errors explained.
+- No accidental bulk delete, deletes are disabled in v1.
+
+### 15.8 System and connectivity
+- Network loss, queue cloud actions, keep local work flowing, replay on reconnect with a re-confirm on anything time-sensitive.
+- Connector outage, rate limit, or expired token, degrade gracefully, say which arm is down, retry with backoff.
+- Conflicting watches, prioritize and batch, do not talk over herself, and never manufacture urgency.
+
+### 15.9 Conversational
+- Interruptions, yield immediately and roll back the in-flight step if not yet committed.
+- Ambiguous undo, confirm which action.
+- Cara changes her mind mid-plan, re-plan from current state.
 
 ---
 
-## 16. Glossary
-- **Principal** — the single human Billi serves.
-- **Connector** — a governed integration to one external service.
-- **Identity** — a specific sendable account (an email address or Slack
-  workspace membership) with its own permissions and signature.
-- **Risk tier (T0–T3)** — the sensitivity class of an action, governing whether
-  it auto-runs or requires confirmation.
-- **Watch / trigger** — a standing condition that makes Billi speak up proactively.
-- **Allow-listed root** — a directory Billi is permitted to read/write.
+## 16. Roadmap and phasing
+
+### Phase 0, foundations (read and draft, build trust)
+- Local desktop shell and voice loop, speech-to-text, ElevenLabs TTS, barge-in, transcript.
+- Connectors, Calendar R, Gmail R plus draft, one Slack workspace R plus draft, Stripe R, local files R/W in allow-listed roots, Granola R.
+- Activity timeline, sign-off engine, encrypted memory and wall map, audit log, voice-rule enforcement at draft time.
+- Success, Cara does morning triage and local doc work by voice daily, with zero boundary crossings.
+
+### Phase 1, acting on the world (signed-off sends)
+- Send email and post Slack on sign-off, full multi-account and multi-workspace identity isolation, calendar create and update including invites, Airtable Network Matching Engine and LinkedIn CRM, dossier assembly from Drive.
+- Double opt-in introduction workflow. Watches and the today dashboard across all engagements.
+- Success, Cara sends, schedules, and coordinates without opening the apps, and introductions always confirm both sides.
+
+### Phase 2, travel, relocation, and proactive ops
+- Travel search, hold, and rebook drafts, itinerary to calendars automation, the CET cutover.
+- Proactive surfacing of Stripe disputes, real deadlines, and conflicts, with quiet hours and no manufactured urgency.
+- The Billi-versus-Kassidy task boundary.
+- Success, a flight delay is handled end-to-end as a single sign-off, and August's relocation does not break calendar reasoning.
+
+### Phase 3, depth and extensibility
+- Connector SDK for anything else relevant, richer memory, the full Cara voice guide added to the repo, and a gated reconsideration of Stripe writes if Cara expands scope in writing.
+
+---
+
+## 17. Success metrics
+- Adoption, daily voice sessions, and the share of coordination actions done via Billi versus native apps.
+- Trust, the rate at which Cara overrides a proposed draft trending down, and zero cross-identity or cross-engagement incidents.
+- Time saved, self-reported minutes per day reclaimed, and fewer app switches.
+- Reliability, action success rate, recovery time from connector outages, and the speech correction rate.
+- Safety, zero unauthorized T2 or T3 actions, zero boundary crossings, and 100% of actions in the audit log.
+
+---
+
+## 18. Open questions
+1. Platform, which OS first for the local shell, which drives keychain, file-permission, and packaging choices.
+2. Wake word vs push-to-talk as the default, given a toddler and frequent travel mean others are often in earshot.
+3. Always-listening boundaries, what is recorded vs transient, and where.
+4. Stripe writes, ever in scope, and with what caps, only if Cara expands scope in writing.
+5. The Billi-versus-Kassidy line, where exactly it sits once Kassidy starts July 1.
+6. Memory backup, local-only or optional encrypted cloud backup.
+7. Latency budget, the acceptable voice round-trip for "feels live."
+
+---
+
+## 19. Glossary
+- Principal, Cara Katz, the single human Billi serves.
+- Connector, a governed integration to one external service.
+- Identity, a specific sendable account, an email address or a Slack workspace membership, with its own permissions and signature.
+- Engagement boundary, the confidentiality wall around one client or business that context must not cross.
+- Risk tier T0 to T3, the sensitivity class of an action that governs whether it auto-runs, shows in the timeline, waits for sign-off, or is disabled.
+- Watch, a standing condition that makes Billi surface something, never act on it.
+- Allow-listed root, a directory Billi may read and write.
