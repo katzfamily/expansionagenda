@@ -193,6 +193,7 @@ async function runTurn(audioBlob) {
     if (window.billiRefreshMemory) window.billiRefreshMemory();
     if (window.billiRefreshTodos) window.billiRefreshTodos();
     if (window.billiRefreshOutbox) window.billiRefreshOutbox();
+    if (window.billiRefreshCards) window.billiRefreshCards();
 
     setState("Speaking…");
     await speak(text);

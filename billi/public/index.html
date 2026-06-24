@@ -61,40 +61,74 @@
 
       <!-- ===== WORKSPACE ===== -->
       <section id="workspace">
-        <section id="outbox" hidden>
-          <div class="card-head">
-            <h2 class="card-title">WhatsApp outbox · tap to send</h2>
-          </div>
-          <ul id="outbox-list"></ul>
-        </section>
-
-        <div id="grid">
-          <section id="panel" class="card">
-            <div class="card-head">
-              <h2 id="panel-title" class="card-title">Conversation</h2>
-              <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
+        <!-- summary cards (tap to expand the full list) -->
+        <div id="cards">
+          <article class="info-card" id="card-todo">
+            <div class="info-head">
+              <div class="art" style="background:linear-gradient(140deg,#cfe0f2,#e6d2e8 55%,#f1d9c6)">
+                <span class="tag">To-do</span>
+              </div>
+              <div class="info-body">
+                <h3 class="info-title" id="todo-sum-title">—</h3>
+                <p class="info-sub" id="todo-sum-sub">—</p>
+              </div>
             </div>
-            <div id="conversation" aria-live="polite"></div>
-          </section>
-
-          <aside id="side">
-            <section id="todos" class="card">
+            <div class="detail">
               <div class="card-head">
-                <h2 class="card-title">To-do</h2>
+                <span class="card-title">All tasks</span>
                 <button id="add-todo" type="button" title="Add a task">+ add</button>
               </div>
               <ul id="todo-list"></ul>
-            </section>
+            </div>
+          </article>
 
-            <section id="memory" class="card">
+          <article class="info-card" id="card-memory">
+            <div class="info-head">
+              <div class="art" style="background:linear-gradient(140deg,#f3d8ce,#e6c4d6 55%,#d2c4ea)">
+                <span class="tag">Memory</span>
+              </div>
+              <div class="info-body">
+                <h3 class="info-title" id="mem-sum-title">—</h3>
+                <p class="info-sub" id="mem-sum-sub">—</p>
+              </div>
+            </div>
+            <div class="detail">
               <div class="card-head">
-                <h2 class="card-title">What Billi remembers</h2>
+                <span class="card-title">What Billi remembers</span>
                 <button id="add-memory" type="button" title="Add a memory">+ add</button>
               </div>
               <ul id="memory-list"></ul>
-            </section>
-          </aside>
+            </div>
+          </article>
+
+          <article class="info-card" id="card-drafts">
+            <div class="info-head">
+              <div class="art" style="background:linear-gradient(140deg,#ccd8ee,#dcd0ec 55%,#f0d4c4)">
+                <span class="tag">Drafts</span>
+              </div>
+              <div class="info-body">
+                <h3 class="info-title" id="draft-sum-title">—</h3>
+                <p class="info-sub" id="draft-sum-sub">—</p>
+              </div>
+            </div>
+            <div class="detail">
+              <div class="card-head">
+                <span class="card-title">WhatsApp outbox · tap to send</span>
+              </div>
+              <div id="outbox" hidden><ul id="outbox-list"></ul></div>
+              <p id="draft-empty" class="detail-empty">No staged messages.</p>
+            </div>
+          </article>
         </div>
+
+        <!-- live conversation -->
+        <section id="panel" class="card">
+          <div class="card-head">
+            <h2 id="panel-title" class="card-title">Conversation</h2>
+            <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
+          </div>
+          <div id="conversation" aria-live="polite"></div>
+        </section>
       </section>
     </main>
 
@@ -103,6 +137,7 @@
     <script src="/memory.js" type="module"></script>
     <script src="/weather.js" type="module"></script>
     <script src="/whatsapp.js" type="module"></script>
+    <script src="/cards.js" type="module"></script>
     <script src="/app.js" type="module"></script>
   </body>
 </html>
