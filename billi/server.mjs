@@ -11,7 +11,7 @@
 import { createServer } from "node:http";
 import { Readable } from "node:stream";
 import { readFile } from "node:fs/promises";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, extname, normalize } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
@@ -35,6 +35,31 @@ const VOICE_ID = process.env.BILLI_VOICE_ID || "nklDUw4Cfwv6KJmhU9Vy";
 // Default to the fastest model for snappy voice turns. Set BILLI_MODEL in .env
 // to claude-sonnet-4-6 or claude-opus-4-8 for more reasoning depth over speed.
 const MODEL = process.env.BILLI_MODEL || "claude-haiku-4-5-20251001";
+
+// Speaking speed, adjustable live from the dashboard's tempo control. Persisted
+// to billi/memory/voice.json so it survives restarts; falls back to .env.
+const VOICE_FILE = join(HERE, "memory", "voice.json");
+function clampSpeed(s) {
+  const n = Number(s);
+  if (!Number.isFinite(n)) return 1.1;
+  return Math.min(1.2, Math.max(0.7, n));
+}
+let voiceSpeed = clampSpeed(process.env.BILLI_VOICE_SPEED || "1.1");
+try {
+  if (existsSync(VOICE_FILE)) voiceSpeed = clampSpeed(JSON.parse(readFileSync(VOICE_FILE, "utf8")).speed);
+} catch {
+  /* keep the default */
+}
+function setVoiceSpeed(s) {
+  voiceSpeed = clampSpeed(s);
+  try {
+    mkdirSync(dirname(VOICE_FILE), { recursive: true });
+    writeFileSync(VOICE_FILE, JSON.stringify({ speed: voiceSpeed }));
+  } catch {
+    /* runtime value still applies for this session */
+  }
+  return voiceSpeed;
+}
 
 // Billi's persona/guardrails come from CLAUDE.md; append voice-mode framing.
 const operatingContext = existsSync(join(ROOT, "CLAUDE.md"))
@@ -128,6 +153,9 @@ const MIME = {
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
 };
 
 // --- API handlers ---------------------------------------------------------
@@ -498,11 +526,8 @@ async function handleSpeak(req, res) {
   const { text } = JSON.parse((await readBody(req)).toString() || "{}");
   if (!text) return json(res, 400, { error: "text required" });
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?output_format=mp3_44100_128`;
-  // How fast Billi speaks. ElevenLabs accepts 0.7 (slow) to 1.2 (fast); 1.0 is
-  // the default. Bumped a little above default so she does not sound drawn out.
-  let speed = Number(process.env.BILLI_VOICE_SPEED || "1.1");
-  if (!Number.isFinite(speed)) speed = 1.1;
-  speed = Math.min(1.2, Math.max(0.7, speed));
+  // Speaking pace, set live by the dashboard tempo control (0.7–1.2).
+  const speed = voiceSpeed;
   const t0 = Date.now();
   const el = await fetch(url, {
     method: "POST",
@@ -608,6 +633,16 @@ async function handleWhatsapp(req, res) {
   json(res, 405, { error: "method not allowed" });
 }
 
+// Voice tempo: read or set Billi's speaking speed (the dashboard control).
+async function handleVoice(req, res) {
+  if (req.method === "GET") return json(res, 200, { speed: voiceSpeed });
+  if (req.method === "POST") {
+    const { speed } = JSON.parse((await readBody(req)).toString() || "{}");
+    return json(res, 200, { speed: setVoiceSpeed(speed) });
+  }
+  json(res, 405, { error: "method not allowed" });
+}
+
 // Conversation persistence: restore on load, or clear the thread.
 async function handleConversation(req, res) {
   if (req.method === "GET") {
@@ -655,6 +690,7 @@ const server = createServer(async (req, res) => {
     if (req.url === "/api/memory") return await handleMemory(req, res);
     if (req.url === "/api/todos") return await handleTodos(req, res);
     if (req.url === "/api/whatsapp") return await handleWhatsapp(req, res);
+    if (req.url === "/api/voice") return await handleVoice(req, res);
     if (req.url === "/api/conversation") return await handleConversation(req, res);
     if (req.method === "GET" && req.url === "/api/status") return handleStatus(res);
     return await serveStatic(req, res);

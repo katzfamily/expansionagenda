@@ -8,7 +8,10 @@ const orb = document.getElementById("orb");
 const stateEl = document.getElementById("state");
 const convoEl = document.getElementById("conversation");
 const warnEl = document.getElementById("warn");
-const ctx = orb.getContext("2d");
+const orbGlow = orb.querySelector(".orb-glow");
+const orbTint = orb.querySelector(".orb-tint");
+const orbPulse = orb.querySelector(".orb-pulse");
+const orbRays = orb.querySelector(".orb-rays");
 
 // Conversation history sent to Claude each turn (stateless API).
 const messages = [];
@@ -20,77 +23,41 @@ let phase = "idle"; // idle | listening | thinking | speaking
 let audioCtx;
 
 // ---- orb animation -------------------------------------------------------
-// A luminous orb on the dark glass: tapered rays radiating from a glowing core.
-// Periwinkle at rest and while listening, warm terracotta while Billi speaks.
-// Palette matches the dashboard design.
+// The design's reflective glass orb: a glow ring and an inner pulse that react
+// to whatever audio is live. Periwinkle at rest and while listening, warm
+// terracotta while Billi speaks.
 const PERIWINKLE = "125,123,240";
 const AMBER = "214,132,92";
-const RAYS = 28;
 
-function draw() {
-  const w = orb.width;
-  const h = orb.height;
-  ctx.clearRect(0, 0, w, h);
-  const cx = w / 2;
-  const cy = h / 2;
+function animateOrb() {
   const t = performance.now() / 1000;
-
-  const idlePulse = 0.5 + 0.5 * Math.sin(t * 1.4);
-  const energy = phase === "idle" ? idlePulse * 0.18 : Math.min(1, amplitude * 1.9);
+  const idle = 0.5 + 0.5 * Math.sin(t * 1.4);
+  // energy: gentle breathing at rest, audio-reactive while live.
+  const energy = phase === "idle" ? idle * 0.5 : Math.min(1, amplitude * 2.1);
   const color = phase === "speaking" ? AMBER : PERIWINKLE;
 
-  const coreR = 52 + energy * 16;
-  const spin = phase === "thinking" ? t * 0.5 : t * 0.12;
-
-  // radiating sunburst rays
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(spin);
-  for (let i = 0; i < RAYS; i++) {
-    const ang = (i / RAYS) * Math.PI * 2;
-    // alternate long/short rays for the starburst silhouette
-    const long = i % 2 === 0;
-    const reach = (long ? 78 : 46) + energy * (long ? 70 : 40);
-    const r0 = coreR - 6;
-    const r1 = coreR + reach;
-    const x0 = Math.cos(ang) * r0;
-    const y0 = Math.sin(ang) * r0;
-    const x1 = Math.cos(ang) * r1;
-    const y1 = Math.sin(ang) * r1;
-    const grad = ctx.createLinearGradient(x0, y0, x1, y1);
-    grad.addColorStop(0, `rgba(${color},${0.55})`);
-    grad.addColorStop(1, `rgba(${color},0)`);
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = long ? 3 : 1.6;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
+  if (orbGlow) {
+    orbGlow.style.background =
+      `radial-gradient(circle, rgba(${color},${(0.3 + energy * 0.4).toFixed(3)}), rgba(${color},0) 70%)`;
   }
-  ctx.restore();
-
-  // soft halo
-  const halo = ctx.createRadialGradient(cx, cy, coreR * 0.4, cx, cy, coreR * 2.2);
-  halo.addColorStop(0, `rgba(${color},0.28)`);
-  halo.addColorStop(1, `rgba(${color},0)`);
-  ctx.fillStyle = halo;
-  ctx.beginPath();
-  ctx.arc(cx, cy, coreR * 2.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // core
-  const core = ctx.createRadialGradient(cx - coreR * 0.3, cy - coreR * 0.3, 2, cx, cy, coreR);
-  core.addColorStop(0, `rgba(${color},0.95)`);
-  core.addColorStop(1, `rgba(${color},0.7)`);
-  ctx.fillStyle = core;
-  ctx.beginPath();
-  ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
-  ctx.fill();
-
-  requestAnimationFrame(draw);
+  if (orbTint) {
+    orbTint.style.background =
+      `radial-gradient(circle at 42% 28%, rgba(255,255,255,0.4), rgba(${color},0.14) 54%, rgba(${color},0.04) 80%, transparent)`;
+  }
+  if (orbRays) {
+    orbRays.style.opacity = (0.22 + energy * 0.3).toFixed(3);
+  }
+  if (orbPulse) {
+    const base = phase === "idle" ? 100 : phase === "speaking" ? 150 : 130;
+    const size = Math.round(base + energy * 44);
+    orbPulse.style.width = `${size}px`;
+    orbPulse.style.height = `${size}px`;
+    orbPulse.style.background =
+      `radial-gradient(circle, rgba(${color},${(0.24 + energy * 0.22).toFixed(3)}), rgba(${color},0) 68%)`;
+  }
+  requestAnimationFrame(animateOrb);
 }
-requestAnimationFrame(draw);
+requestAnimationFrame(animateOrb);
 
 // ---- analyser: turn an audio stream/element into amplitude ---------------
 function ensureAudioCtx() {
@@ -390,6 +357,37 @@ if (clearBtn) {
     setState("hold the orb or press and hold space to talk");
   });
 }
+
+// ---- voice tempo (Slow / Normal / Fast) ----------------------------------
+const tempoButtons = Array.from(document.querySelectorAll(".tempo-seg button"));
+function markTempo(speed) {
+  for (const b of tempoButtons) {
+    b.classList.toggle("on", Math.abs(Number(b.dataset.speed) - speed) < 0.01);
+  }
+}
+for (const b of tempoButtons) {
+  b.addEventListener("click", async () => {
+    const speed = Number(b.dataset.speed);
+    markTempo(speed);
+    try {
+      await fetch("/api/voice", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ speed }),
+      });
+    } catch {
+      /* the visual selection still updates */
+    }
+  });
+}
+(async () => {
+  try {
+    const { speed } = await api("/api/voice");
+    markTempo(typeof speed === "number" ? speed : 1.1);
+  } catch {
+    markTempo(1.1);
+  }
+})();
 
 // ---- key check on load ---------------------------------------------------
 (async () => {

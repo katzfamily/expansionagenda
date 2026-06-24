@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/style.css" />
@@ -16,64 +16,97 @@
     <main id="app">
       <div id="warn" hidden></div>
 
-      <header id="topbar">
-        <h1 id="wordmark">Bil<em>li</em></h1>
-        <div id="weather" hidden>
-          <span id="weather-icon" aria-hidden="true"></span>
-          <span id="weather-temps"><span id="w-hi">–</span>° / <span id="w-lo">–</span>°</span>
-          <span id="weather-place"></span>
-        </div>
-      </header>
-
+      <!-- ===== HERO ===== -->
       <section id="hero">
-        <div id="orb-wrap">
-          <canvas id="orb" width="340" height="340" aria-hidden="true"></canvas>
-        </div>
-        <p id="state">hold the orb or press and hold space to talk</p>
-      </section>
+        <button class="hero-nav left" type="button" aria-label="back">‹</button>
+        <button class="hero-nav right" type="button" aria-label="favorite">♥</button>
 
-      <section id="links-card" class="card">
-        <div class="card-head">
-          <h2 class="card-title">Quick links</h2>
-          <button id="add-link" type="button" title="Add a link">+ add</button>
-        </div>
-        <div id="link-grid"></div>
-      </section>
-
-      <section id="outbox" hidden>
-        <div class="card-head">
-          <h2 class="card-title">WhatsApp outbox · tap to send</h2>
-        </div>
-        <ul id="outbox-list"></ul>
-      </section>
-
-      <div id="grid">
-        <section id="panel" class="card">
-          <div class="card-head">
-            <h2 id="panel-title" class="card-title">Conversation</h2>
-            <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
+        <!-- the orb (hold to talk) -->
+        <div id="orb" role="button" tabindex="0" aria-label="Hold to talk">
+          <div class="orb-glow"></div>
+          <div class="orb-rays"></div>
+          <div class="orb-sphere">
+            <div class="orb-tint"></div>
+            <div class="orb-sheen"></div>
+            <div class="orb-spec"></div>
           </div>
-          <div id="conversation" aria-live="polite"></div>
+          <div class="orb-highlight"></div>
+          <div class="orb-pulse"></div>
+        </div>
+
+        <!-- context pills -->
+        <div class="hero-pills">
+          <span id="weather" hidden>
+            <span id="weather-icon" aria-hidden="true"></span>
+            <span id="weather-temps"><span id="w-hi">–</span>° / <span id="w-lo">–</span>°</span>
+            <span id="weather-place"></span>
+          </span>
+          <span class="pill connected"><span class="dot"></span> All connected</span>
+        </div>
+
+        <!-- voice tempo -->
+        <div id="tempo">
+          <span class="tempo-note">Voice tempo</span>
+          <div class="tempo-seg" role="group" aria-label="Voice tempo">
+            <button type="button" data-speed="0.7">Slow</button>
+            <button type="button" data-speed="1.0">Normal</button>
+            <button type="button" data-speed="1.2">Fast</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== STATUS BAND ===== -->
+      <section id="status-band">
+        <div class="greet">
+          <h1 id="greeting">Good <em>afternoon</em>, Cara</h1>
+          <p id="state">hold the orb or press and hold space to talk</p>
+        </div>
+        <div class="links-wrap">
+          <div class="links-head">
+            <span class="card-title">Quick links</span>
+            <button id="add-link" type="button" title="Add a link">+ add</button>
+          </div>
+          <div id="link-grid"></div>
+        </div>
+      </section>
+
+      <!-- ===== WORKSPACE ===== -->
+      <section id="workspace">
+        <section id="outbox" hidden>
+          <div class="card-head">
+            <h2 class="card-title">WhatsApp outbox · tap to send</h2>
+          </div>
+          <ul id="outbox-list"></ul>
         </section>
 
-        <aside id="side">
-          <section id="todos" class="card">
+        <div id="grid">
+          <section id="panel" class="card">
             <div class="card-head">
-              <h2 class="card-title">To-do</h2>
-              <button id="add-todo" type="button" title="Add a task">+ add</button>
+              <h2 id="panel-title" class="card-title">Conversation</h2>
+              <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
             </div>
-            <ul id="todo-list"></ul>
+            <div id="conversation" aria-live="polite"></div>
           </section>
 
-          <section id="memory" class="card">
-            <div class="card-head">
-              <h2 class="card-title">What Billi remembers</h2>
-              <button id="add-memory" type="button" title="Add a memory">+ add</button>
-            </div>
-            <ul id="memory-list"></ul>
-          </section>
-        </aside>
-      </div>
+          <aside id="side">
+            <section id="todos" class="card">
+              <div class="card-head">
+                <h2 class="card-title">To-do</h2>
+                <button id="add-todo" type="button" title="Add a task">+ add</button>
+              </div>
+              <ul id="todo-list"></ul>
+            </section>
+
+            <section id="memory" class="card">
+              <div class="card-head">
+                <h2 class="card-title">What Billi remembers</h2>
+                <button id="add-memory" type="button" title="Add a memory">+ add</button>
+              </div>
+              <ul id="memory-list"></ul>
+            </section>
+          </aside>
+        </div>
+      </section>
     </main>
 
     <script src="/bookmarks.js" type="module"></script>

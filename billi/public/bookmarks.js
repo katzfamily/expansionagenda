@@ -41,15 +41,15 @@ function save(links) {
 
 let links = load();
 
-// Stable-ish gradient accent per tile so the badges read as a lively set.
+// Glassy badge accents (ink colour + inner glow), matching the design.
 const ACCENTS = [
-  "linear-gradient(135deg,#ea5a5a,#d6456e)",
-  "linear-gradient(135deg,#6f8ce8,#5e72c8)",
-  "linear-gradient(135deg,#8a7bf0,#6f5ad6)",
-  "linear-gradient(135deg,#b07ad0,#9456b8)",
-  "linear-gradient(135deg,#f08aa0,#e0607c)",
-  "linear-gradient(135deg,#5ab8c8,#3f9aac)",
-  "linear-gradient(135deg,#e0a060,#c9822e)",
+  { ink: "#d6456e", glow: "rgba(214,69,110,0.42)" },
+  { ink: "#5e72c8", glow: "rgba(94,114,200,0.42)" },
+  { ink: "#6f5ad6", glow: "rgba(111,90,214,0.42)" },
+  { ink: "#9456b8", glow: "rgba(148,86,184,0.42)" },
+  { ink: "#e0607c", glow: "rgba(224,96,124,0.42)" },
+  { ink: "#3f9aac", glow: "rgba(63,154,172,0.44)" },
+  { ink: "#c9822e", glow: "rgba(201,130,46,0.44)" },
 ];
 function accentFor(i) {
   return ACCENTS[i % ACCENTS.length];
@@ -81,7 +81,9 @@ function render() {
 
     const badge = document.createElement("span");
     badge.className = "link-badge";
-    badge.style.background = accentFor(i);
+    const accent = accentFor(i);
+    badge.style.color = accent.ink;
+    badge.style.setProperty("--glow", accent.glow);
     badge.textContent = initials(link.name);
 
     const label = document.createElement("span");
