@@ -6,17 +6,13 @@
 //
 // Same flat-file approach as memory.mjs: read and rewritten whole on change.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { MEMORY_DIR, ensureMemoryDir } from "./paths.mjs";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const DIR = join(HERE, "..", "memory");
-const FILE = join(DIR, "todos.json");
+const FILE = join(MEMORY_DIR, "todos.json");
 
-function ensureDir() {
-  if (!existsSync(DIR)) mkdirSync(DIR, { recursive: true });
-}
+const ensureDir = ensureMemoryDir;
 
 export function loadTodos() {
   try {

@@ -86,6 +86,37 @@ and never crosses context between them.
 | `BILLI_MODEL` | `claude-haiku-4-5-20251001` | Reasoning model (fastest). Set `claude-sonnet-4-6` or `claude-opus-4-8` for more depth. |
 | `BILLI_TTS_MODEL` | `eleven_flash_v2_5` | ElevenLabs model (flash = lowest latency). |
 | `BILLI_VOICE_SPEED` | `1.1` | How fast Billi talks. `0.7` slow … `1.0` default … `1.2` fast. |
+| `BILLI_PASSCODE` | _(unset)_ | If set, Billi requires this passcode to open. **Always set it on any URL reachable off your own machine.** |
+| `BILLI_DATA_DIR` | `billi/` | Where memory/to-dos/conversation/tokens are stored. Point at a persistent disk on a cloud host. |
+
+## Use Billi from your phone (deploy to Render)
+
+Billi is a live server (she holds your keys and can read your email), so two
+things matter before she's reachable from your phone: a **passcode lock**
+(`BILLI_PASSCODE`) and a host built for an always-on server with a persistent
+disk. **Netlify does not fit** — it has no always-running server or permanent
+disk. Render does. A `render.yaml` blueprint is included.
+
+1. Push this branch to GitHub (already done if you've been pulling).
+2. Go to https://render.com, sign up, and connect your GitHub.
+3. **New + → Blueprint**, pick this repo. Render reads `render.yaml` and creates
+   the web service plus a 1 GB persistent disk (mounted at `/var/data`).
+4. Render prompts for the secret values. Paste them from your `.env`:
+   - `BILLI_PASSCODE` — **choose a passcode** (this is what unlocks Billi).
+   - `ANTHROPIC_API_KEY`, `DEEPGRAM_API_KEY`, `ELEVENLABS_API_KEY`
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `MY_WHATSAPP_NUMBER`
+5. Click deploy. Render gives you a URL like `https://billi-xxxx.onrender.com`.
+6. Open it on your phone, enter your passcode, allow the microphone. The URL is
+   HTTPS, which phones require for mic access.
+
+Plan note: the persistent disk needs Render's **Starter** plan (~$7/mo); the
+free plan has no disk and sleeps after inactivity.
+
+Gmail caveat: the Gmail connection (`billi/.gmail-accounts.json`) is created by
+a local browser login and lives on your Mac, not the cloud disk yet. Voice
+chat, memory, to-dos, and WhatsApp work on the cloud immediately; wiring Gmail
+on the cloud is a separate step (the OAuth flow needs a public redirect) — ask
+and I'll set it up.
 
 ## What's deliberately not here yet
 

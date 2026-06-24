@@ -1,0 +1,45 @@
+# Render blueprint for Billi — an always-on cloud host with a persistent disk.
+#
+# To deploy: render.com → New + → Blueprint → pick this repo. Render reads this
+# file, creates the service and the disk, and asks you to fill in the secret
+# values (the ones marked sync:false) — paste the same values from your .env.
+#
+# Plan note: a persistent disk (so memory/to-dos/conversation survive restarts)
+# requires the Starter plan (~$7/mo) — the free plan has no disk and sleeps.
+
+services:
+  - type: web
+    name: billi
+    runtime: node
+    plan: starter
+    branch: claude/stoic-lamport-o8nkge
+    buildCommand: npm install
+    startCommand: node billi/server.mjs
+    healthCheckPath: /
+    autoDeploy: true
+    disk:
+      name: billi-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: BILLI_DATA_DIR
+        value: /var/data/billi
+      - key: BILLI_VOICE_ID
+        value: nklDUw4Cfwv6KJmhU9Vy
+      - key: TWILIO_WHATSAPP_FROM
+        value: whatsapp:+14155238886
+      # Secrets — Render will prompt you to enter these (paste from your .env):
+      - key: BILLI_PASSCODE
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: MY_WHATSAPP_NUMBER
+        sync: false

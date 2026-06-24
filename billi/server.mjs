@@ -20,11 +20,14 @@ import * as gmail from "./lib/gmail.mjs";
 import * as memory from "./lib/memory.mjs";
 import * as todos from "./lib/todos.mjs";
 import * as whatsapp from "./lib/whatsapp.mjs";
+import * as auth from "./lib/auth.mjs";
+import { MEMORY_DIR, ensureMemoryDir } from "./lib/paths.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 const PUBLIC = join(HERE, "public");
-const PORT = process.env.BILLI_PORT || 8787;
+// Cloud hosts (Render, etc.) inject PORT; fall back to BILLI_PORT/8787 locally.
+const PORT = process.env.PORT || process.env.BILLI_PORT || 8787;
 
 loadEnv(join(ROOT, ".env"));
 
@@ -38,7 +41,7 @@ const MODEL = process.env.BILLI_MODEL || "claude-haiku-4-5-20251001";
 
 // Speaking speed, adjustable live from the dashboard's tempo control. Persisted
 // to billi/memory/voice.json so it survives restarts; falls back to .env.
-const VOICE_FILE = join(HERE, "memory", "voice.json");
+const VOICE_FILE = join(MEMORY_DIR, "voice.json");
 function clampSpeed(s) {
   const n = Number(s);
   if (!Number.isFinite(n)) return 1.1;
@@ -681,9 +684,29 @@ async function serveStatic(req, res) {
   }
 }
 
+// Passcode login: verify and set the session cookie.
+async function handleLogin(req, res) {
+  const { passcode } = JSON.parse((await readBody(req)).toString() || "{}");
+  if (!auth.checkPasscode(passcode)) return json(res, 401, { error: "wrong passcode" });
+  res.writeHead(200, { "content-type": "application/json", "set-cookie": auth.sessionCookie(req) });
+  res.end(JSON.stringify({ ok: true }));
+}
+
 // --- server ---------------------------------------------------------------
 const server = createServer(async (req, res) => {
   try {
+    const path = req.url.split("?")[0];
+    // Login endpoint is always open; everything else requires a session when a
+    // passcode is configured.
+    if (req.method === "POST" && path === "/api/login") return await handleLogin(req, res);
+    if (!auth.isAuthed(req)) {
+      if (req.method === "GET" && !path.startsWith("/api/")) {
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        return res.end(auth.loginPage());
+      }
+      return json(res, 401, { error: "unauthorized" });
+    }
+
     if (req.method === "POST" && req.url === "/api/listen") return await handleListen(req, res);
     if (req.method === "POST" && req.url === "/api/respond") return await handleRespond(req, res);
     if (req.method === "POST" && req.url === "/api/speak") return await handleSpeak(req, res);
@@ -699,9 +722,16 @@ const server = createServer(async (req, res) => {
   }
 });
 
+ensureMemoryDir();
 server.listen(PORT, () => {
   console.log(`\n  Billi v0 is listening on http://localhost:${PORT}`);
   console.log(`  voice: ${VOICE_ID}   model: ${MODEL}`);
+  console.log(`  data: ${MEMORY_DIR}`);
+  console.log(
+    auth.authEnabled()
+      ? "  lock: passcode ON ✓ — a passcode is required to open Billi"
+      : "  lock: OFF — fine on your own Mac, but set BILLI_PASSCODE before any public URL",
+  );
   const missing = [
     !DEEPGRAM_API_KEY && "DEEPGRAM_API_KEY",
     !ANTHROPIC_API_KEY && "ANTHROPIC_API_KEY",

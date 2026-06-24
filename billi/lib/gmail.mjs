@@ -7,11 +7,9 @@
 // demand via raw fetch — no googleapis dependency.
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { ACCOUNTS_FILE } from "./paths.mjs";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-export const ACCOUNTS_FILE = join(HERE, "..", ".gmail-accounts.json");
+export { ACCOUNTS_FILE };
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";

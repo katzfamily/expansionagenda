@@ -9,18 +9,14 @@
 // Auth: Twilio Account SID + Auth Token (Basic auth) from .env. Sender is the
 // WhatsApp sandbox number by default. Recipients must have joined the sandbox.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { MEMORY_DIR, ensureMemoryDir } from "./paths.mjs";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const DIR = join(HERE, "..", "memory");
-const OUTBOX_FILE = join(DIR, "whatsapp-outbox.json");
-const CONTACTS_FILE = join(DIR, "whatsapp-contacts.json");
+const OUTBOX_FILE = join(MEMORY_DIR, "whatsapp-outbox.json");
+const CONTACTS_FILE = join(MEMORY_DIR, "whatsapp-contacts.json");
 
-function ensureDir() {
-  if (!existsSync(DIR)) mkdirSync(DIR, { recursive: true });
-}
+const ensureDir = ensureMemoryDir;
 
 function readJson(file, fallback) {
   try {

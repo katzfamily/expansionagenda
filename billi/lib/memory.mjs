@@ -9,19 +9,15 @@
 // This is deliberately a flat file store. One principal, one machine, no
 // database. It is read and rewritten whole on every change — fine at this size.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { MEMORY_DIR, ensureMemoryDir } from "./paths.mjs";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const DIR = join(HERE, "..", "memory");
-const FACTS_FILE = join(DIR, "memory.json");
-const MD_FILE = join(DIR, "memory.md");
-const CONVO_FILE = join(DIR, "conversation.json");
+const FACTS_FILE = join(MEMORY_DIR, "memory.json");
+const MD_FILE = join(MEMORY_DIR, "memory.md");
+const CONVO_FILE = join(MEMORY_DIR, "conversation.json");
 
-function ensureDir() {
-  if (!existsSync(DIR)) mkdirSync(DIR, { recursive: true });
-}
+const ensureDir = ensureMemoryDir;
 
 function readJson(file, fallback) {
   try {

@@ -4,9 +4,13 @@
   "private": true,
   "description": "Jam Board — live agenda tool for the Weekly Expansion Jam",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "netlify dev",
     "smoke": "node test/smoke.mjs",
+    "start": "node billi/server.mjs",
     "billi": "node billi/server.mjs",
     "billi:connect-gmail": "node billi/connect-gmail.mjs"
   },
