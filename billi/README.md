@@ -85,6 +85,7 @@ and never crosses context between them.
 | `BILLI_VOICE_ID` | `nklDUw4Cfwv6KJmhU9Vy` | ElevenLabs voice. |
 | `BILLI_MODEL` | `claude-haiku-4-5-20251001` | Reasoning model (fastest). Set `claude-sonnet-4-6` or `claude-opus-4-8` for more depth. |
 | `BILLI_TTS_MODEL` | `eleven_flash_v2_5` | ElevenLabs model (flash = lowest latency). |
+| `BILLI_VOICE_SPEED` | `1.1` | How fast Billi talks. `0.7` slow … `1.0` default … `1.2` fast. |
 
 ## What's deliberately not here yet
 

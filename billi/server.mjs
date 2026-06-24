@@ -498,12 +498,21 @@ async function handleSpeak(req, res) {
   const { text } = JSON.parse((await readBody(req)).toString() || "{}");
   if (!text) return json(res, 400, { error: "text required" });
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?output_format=mp3_44100_128`;
+  // How fast Billi speaks. ElevenLabs accepts 0.7 (slow) to 1.2 (fast); 1.0 is
+  // the default. Bumped a little above default so she does not sound drawn out.
+  let speed = Number(process.env.BILLI_VOICE_SPEED || "1.1");
+  if (!Number.isFinite(speed)) speed = 1.1;
+  speed = Math.min(1.2, Math.max(0.7, speed));
   const t0 = Date.now();
   const el = await fetch(url, {
     method: "POST",
     headers: { "xi-api-key": ELEVENLABS_API_KEY, "content-type": "application/json", accept: "audio/mpeg" },
     // flash is ElevenLabs' lowest-latency model — fastest time-to-first-audio.
-    body: JSON.stringify({ text, model_id: process.env.BILLI_TTS_MODEL || "eleven_flash_v2_5" }),
+    body: JSON.stringify({
+      text,
+      model_id: process.env.BILLI_TTS_MODEL || "eleven_flash_v2_5",
+      voice_settings: { speed },
+    }),
   });
   console.log(`  speak: first audio in ${Date.now() - t0}ms`);
   if (!el.ok || !el.body) return json(res, 502, { error: `ElevenLabs ${el.status}: ${await el.text()}` });
