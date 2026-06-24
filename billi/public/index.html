@@ -4,73 +4,78 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Billi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <main>
+    <main id="app">
+      <div id="warn" hidden></div>
+
       <header id="topbar">
         <h1 id="wordmark">Bil<em>li</em></h1>
-        <div id="topbar-right">
-          <div id="weather" hidden>
-            <span id="weather-icon" aria-hidden="true"></span>
-            <span id="weather-temps"><span id="w-hi">–</span>° / <span id="w-lo">–</span>°</span>
-            <span id="weather-place"></span>
-          </div>
-          <p id="state">hold the orb or press and hold space to talk</p>
+        <div id="weather" hidden>
+          <span id="weather-icon" aria-hidden="true"></span>
+          <span id="weather-temps"><span id="w-hi">–</span>° / <span id="w-lo">–</span>°</span>
+          <span id="weather-place"></span>
         </div>
       </header>
 
-      <div id="dash">
-        <div id="left-col">
-          <section id="stage">
-            <canvas id="orb" width="340" height="340" aria-hidden="true"></canvas>
-          </section>
+      <section id="hero">
+        <div id="orb-wrap">
+          <canvas id="orb" width="340" height="340" aria-hidden="true"></canvas>
+        </div>
+        <p id="state">hold the orb or press and hold space to talk</p>
+      </section>
 
-          <section id="bookmarks" class="widget">
-            <div class="widget-head">
-              <h2 class="widget-title">Quick links</h2>
-              <button id="add-link" type="button" title="Add a link">+ add</button>
-            </div>
-            <div id="link-grid"></div>
-          </section>
+      <section id="links-card" class="card">
+        <div class="card-head">
+          <h2 class="card-title">Quick links</h2>
+          <button id="add-link" type="button" title="Add a link">+ add</button>
+        </div>
+        <div id="link-grid"></div>
+      </section>
 
-          <section id="todos" class="widget">
-            <div class="widget-head">
-              <h2 class="widget-title">To-do</h2>
+      <section id="outbox" hidden>
+        <div class="card-head">
+          <h2 class="card-title">WhatsApp outbox · tap to send</h2>
+        </div>
+        <ul id="outbox-list"></ul>
+      </section>
+
+      <div id="grid">
+        <section id="panel" class="card">
+          <div class="card-head">
+            <h2 id="panel-title" class="card-title">Conversation</h2>
+            <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
+          </div>
+          <div id="conversation" aria-live="polite"></div>
+        </section>
+
+        <aside id="side">
+          <section id="todos" class="card">
+            <div class="card-head">
+              <h2 class="card-title">To-do</h2>
               <button id="add-todo" type="button" title="Add a task">+ add</button>
             </div>
             <ul id="todo-list"></ul>
           </section>
 
-          <section id="memory" class="widget">
-            <div class="widget-head">
-              <h2 class="widget-title">What Billi remembers</h2>
+          <section id="memory" class="card">
+            <div class="card-head">
+              <h2 class="card-title">What Billi remembers</h2>
               <button id="add-memory" type="button" title="Add a memory">+ add</button>
             </div>
             <ul id="memory-list"></ul>
           </section>
-        </div>
-
-        <div id="right-col">
-          <section id="outbox" hidden>
-            <div class="widget-head">
-              <h2 class="widget-title">WhatsApp outbox · tap to send</h2>
-            </div>
-            <ul id="outbox-list"></ul>
-          </section>
-
-          <section id="panel">
-            <div class="widget-head">
-              <h2 id="panel-title">Conversation</h2>
-              <button id="clear-convo" type="button" title="Clear the saved thread">clear</button>
-            </div>
-            <div id="conversation" aria-live="polite"></div>
-          </section>
-        </div>
+        </aside>
       </div>
-
-      <div id="warn" hidden></div>
     </main>
+
     <script src="/bookmarks.js" type="module"></script>
     <script src="/todos.js" type="module"></script>
     <script src="/memory.js" type="module"></script>

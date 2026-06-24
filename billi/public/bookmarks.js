@@ -41,8 +41,16 @@ function save(links) {
 
 let links = load();
 
-// Stable-ish accent per tile so colors don't all read the same.
-const ACCENTS = ["#8685fd", "#b36e1d", "#242323"];
+// Stable-ish gradient accent per tile so the badges read as a lively set.
+const ACCENTS = [
+  "linear-gradient(135deg,#ea5a5a,#d6456e)",
+  "linear-gradient(135deg,#6f8ce8,#5e72c8)",
+  "linear-gradient(135deg,#8a7bf0,#6f5ad6)",
+  "linear-gradient(135deg,#b07ad0,#9456b8)",
+  "linear-gradient(135deg,#f08aa0,#e0607c)",
+  "linear-gradient(135deg,#5ab8c8,#3f9aac)",
+  "linear-gradient(135deg,#e0a060,#c9822e)",
+];
 function accentFor(i) {
   return ACCENTS[i % ACCENTS.length];
 }

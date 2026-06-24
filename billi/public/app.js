@@ -20,11 +20,11 @@ let phase = "idle"; // idle | listening | thinking | speaking
 let audioCtx;
 
 // ---- orb animation -------------------------------------------------------
-// A Dreamers & Doers sunburst: tapered rays radiating from a warm core, on the
-// cream canvas. Periwinkle at rest and while listening, warm amber while Billi
-// speaks. The rays breathe with whatever audio is live.
-const PERIWINKLE = "134,133,253";
-const AMBER = "179,110,29";
+// A luminous orb on the dark glass: tapered rays radiating from a glowing core.
+// Periwinkle at rest and while listening, warm terracotta while Billi speaks.
+// Palette matches the dashboard design.
+const PERIWINKLE = "125,123,240";
+const AMBER = "214,132,92";
 const RAYS = 28;
 
 function draw() {
