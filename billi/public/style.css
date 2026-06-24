@@ -31,7 +31,7 @@ html, body {
   margin: clamp(16px, 4vh, 44px) auto;
   border-radius: 30px;
   overflow: hidden;
-  background: #1a1426 url("/assets/bg.jpg") center 18% / cover;
+  background: #1a1426 url("/assets/bg.jpg") center 16% / cover;
   box-shadow: 0 50px 120px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -57,39 +57,114 @@ html, body {
   background: linear-gradient(180deg, rgba(120, 104, 170, 0) 70%, rgba(108, 92, 158, 0.28));
 }
 
-/* orb — hold to talk. The crystal ball lives in the hero photo; this is the
-   interactive zone over it, with a glow + pulse that bloom with your voice and
-   stay near-invisible at rest so the photo reads cleanly. */
+/* orb — hold to talk. A reflective glass sphere (the flowers reflected inside)
+   centered in the hero, overlapping into the status band like the design. The
+   glow ring and inner pulse react to your voice. */
 #orb {
   position: absolute;
   z-index: 5;
-  left: calc(50% - 185px);
-  top: 30px;
-  width: 370px;
-  height: 370px;
+  left: calc(50% - 158px);
+  top: 86px;
+  width: 316px;
+  height: 316px;
   cursor: pointer;
   user-select: none;
   touch-action: none;
+  animation: breathe 4.5s ease-in-out infinite;
 }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .orb-glow {
   position: absolute;
-  inset: -8px;
+  inset: -22px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--peri), 0), rgba(var(--peri), 0) 70%);
-  filter: blur(24px);
+  background: radial-gradient(circle, rgba(var(--peri), 0.42), rgba(var(--peri), 0) 70%);
+  filter: blur(16px);
   pointer-events: none;
-  transition: background 0.4s;
+  transition: background 0.5s;
+}
+.orb-rays {
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+    rgba(var(--peri), 0.5), rgba(255, 255, 255, 0.1) 28deg,
+    rgba(var(--peri), 0.5) 56deg, rgba(255, 255, 255, 0.1) 84deg,
+    rgba(var(--peri), 0.5) 112deg, rgba(255, 255, 255, 0.1) 140deg,
+    rgba(var(--peri), 0.5) 168deg, rgba(255, 255, 255, 0.1) 196deg,
+    rgba(var(--peri), 0.5) 224deg, rgba(255, 255, 255, 0.1) 252deg,
+    rgba(var(--peri), 0.5) 280deg, rgba(255, 255, 255, 0.1) 308deg,
+    rgba(var(--peri), 0.5) 336deg, rgba(255, 255, 255, 0.1) 360deg);
+  opacity: 0.28;
+  mix-blend-mode: soft-light;
+  animation: spin 22s linear infinite;
+  pointer-events: none;
+}
+.orb-sphere {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    inset 0 -26px 42px -12px rgba(255, 255, 255, 0.92),
+    inset 0 22px 36px -10px rgba(108, 86, 150, 0.5),
+    inset 18px 0 30px -14px rgba(255, 255, 255, 0.45),
+    inset -18px 0 30px -14px rgba(188, 166, 226, 0.5),
+    0 32px 66px rgba(78, 58, 118, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+.orb-reflection {
+  position: absolute;
+  inset: -22%;
+  background: url("/assets/bg.jpg") center 42% / 460px auto no-repeat;
+  transform: scaleY(-1) scale(1.06);
+  filter: saturate(1.18) brightness(1.06) contrast(1.02);
+}
+.orb-tint {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 42% 28%, rgba(255, 255, 255, 0.4),
+    rgba(var(--peri), 0.14) 54%, rgba(var(--peri), 0.04) 80%, transparent);
+  mix-blend-mode: soft-light;
+  transition: background 0.5s;
+}
+.orb-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0) 40%);
+}
+.orb-spec {
+  position: absolute;
+  left: 64%;
+  top: 70%;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), transparent 70%);
+  filter: blur(1px);
+}
+.orb-highlight {
+  position: absolute;
+  left: 26%;
+  top: 17%;
+  width: 96px;
+  height: 62px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 70%);
+  filter: blur(2px);
+  pointer-events: none;
 }
 .orb-pulse {
   position: absolute;
   left: 50%;
-  top: 52%;
-  width: 120px;
-  height: 120px;
+  top: 50%;
+  width: 100px;
+  height: 100px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--peri), 0), rgba(var(--peri), 0) 68%);
-  filter: blur(12px);
+  background: radial-gradient(circle, rgba(var(--peri), 0.26), rgba(var(--peri), 0) 68%);
+  filter: blur(9px);
   mix-blend-mode: screen;
   pointer-events: none;
 }
