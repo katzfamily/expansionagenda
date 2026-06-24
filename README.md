@@ -7,6 +7,13 @@ in real time.
 - **Live site:** https://expansion-jam-board.netlify.app (Netlify site `expansion-jam-board`)
 - **Airtable archive:** [Expansion Jam 📞 Agenda](https://airtable.com/appd47FpAzqZCzTQM)
 
+## Documentation
+
+- [`docs/MIGRATION.md`](docs/MIGRATION.md) — **move this whole system into the Dreamers & Doers accounts** (step-by-step). Start here for the handoff.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the pieces fit together.
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — day-to-day runbook + troubleshooting (incl. "topics aren't saving").
+- [`docs/CLAUDE_PROJECT_INSTRUCTIONS.md`](docs/CLAUDE_PROJECT_INSTRUCTIONS.md) — paste-in instructions for the D&D Claude account.
+
 ## Features
 
 - **Submit topics anytime** — who, context, priority (🔥 / 💬 / 🅿️), time
