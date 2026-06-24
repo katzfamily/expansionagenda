@@ -83,7 +83,7 @@ and never crosses context between them.
 |---|---|---|
 | `BILLI_PORT` | `8787` | Local port. |
 | `BILLI_VOICE_ID` | `nklDUw4Cfwv6KJmhU9Vy` | ElevenLabs voice. |
-| `BILLI_MODEL` | `claude-sonnet-4-6` | Reasoning model. Set `claude-haiku-4-5` for faster turns, `claude-opus-4-8` for max quality. |
+| `BILLI_MODEL` | `claude-haiku-4-5-20251001` | Reasoning model (fastest). Set `claude-sonnet-4-6` or `claude-opus-4-8` for more depth. |
 | `BILLI_TTS_MODEL` | `eleven_flash_v2_5` | ElevenLabs model (flash = lowest latency). |
 
 ## What's deliberately not here yet

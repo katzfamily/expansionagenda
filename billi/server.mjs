@@ -32,9 +32,9 @@ const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const VOICE_ID = process.env.BILLI_VOICE_ID || "nklDUw4Cfwv6KJmhU9Vy";
-// Default to a fast model for snappy voice turns. Set BILLI_MODEL in .env to
-// claude-opus-4-8 if you want maximum reasoning quality over speed.
-const MODEL = process.env.BILLI_MODEL || "claude-sonnet-4-6";
+// Default to the fastest model for snappy voice turns. Set BILLI_MODEL in .env
+// to claude-sonnet-4-6 or claude-opus-4-8 for more reasoning depth over speed.
+const MODEL = process.env.BILLI_MODEL || "claude-haiku-4-5-20251001";
 
 // Billi's persona/guardrails come from CLAUDE.md; append voice-mode framing.
 const operatingContext = existsSync(join(ROOT, "CLAUDE.md"))
@@ -93,9 +93,16 @@ is read aloud by a text-to-speech voice, so:
   plainly and offer to note it for when that connector is wired up.
 - Never invent facts, deadlines, or data. Honor the guardrails above.`;
 
-// Built fresh each turn so memory edits take effect without a restart.
-function buildSystemPrompt() {
-  return SYSTEM_BASE + memory.factsForPrompt() + todos.todosForPrompt() + whatsapp.pendingForPrompt();
+// Built fresh each turn so memory edits take effect without a restart. Returned
+// as content blocks so the big static part (CLAUDE.md + framing) can be prompt-
+// cached across turns — that skips re-processing it every turn and cuts the
+// time-to-first-token noticeably. The small dynamic part (memory, to-dos,
+// staged messages) follows the cache breakpoint, uncached.
+function buildSystemBlocks() {
+  const blocks = [{ type: "text", text: SYSTEM_BASE, cache_control: { type: "ephemeral" } }];
+  const dynamic = memory.factsForPrompt() + todos.todosForPrompt() + whatsapp.pendingForPrompt();
+  if (dynamic.trim()) blocks.push({ type: "text", text: dynamic });
+  return blocks;
 }
 
 const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
@@ -132,11 +139,13 @@ async function handleListen(req, res) {
   if (!audio.length) return json(res, 400, { error: "no audio received" });
   const contentType = req.headers["content-type"] || "audio/webm";
   const url = "https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&punctuate=true";
+  const t0 = Date.now();
   const dg = await fetch(url, {
     method: "POST",
     headers: { Authorization: `Token ${DEEPGRAM_API_KEY}`, "Content-Type": contentType },
     body: audio,
   });
+  console.log(`  hear: ${Date.now() - t0}ms`);
   if (!dg.ok) return json(res, 502, { error: `Deepgram ${dg.status}: ${await dg.text()}` });
   const data = await dg.json();
   const transcript = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? "";
@@ -436,18 +445,23 @@ async function handleRespond(req, res) {
   }
   const convo = [...messages];
   const actions = [];
+  const t0 = Date.now();
+  let calls = 0;
   try {
     let finalText = "";
-    const systemPrompt = buildSystemPrompt();
+    const system = buildSystemBlocks();
     for (let step = 0; step < 6; step++) {
-      const resp = await anthropic.messages.create({
+      const params = {
         model: MODEL,
         max_tokens: 512, // short spoken replies finish faster end to end
-        output_config: { effort: "low" }, // fast turns for voice
-        system: systemPrompt,
+        system,
         tools: TOOLS,
         messages: convo,
-      });
+      };
+      // effort tuning applies to the thinking models, not Haiku.
+      if (!/haiku/i.test(MODEL)) params.output_config = { effort: "low" };
+      calls++;
+      const resp = await anthropic.messages.create(params);
       finalText = resp.content
         .filter((b) => b.type === "text")
         .map((b) => b.text)
@@ -469,6 +483,7 @@ async function handleRespond(req, res) {
     }
     // Persist the clean text transcript so the thread survives a reload.
     memory.saveConversation([...messages, { role: "assistant", content: finalText }]);
+    console.log(`  think: ${Date.now() - t0}ms (${calls} model call${calls === 1 ? "" : "s"})`);
     json(res, 200, { text: finalText, actions });
   } catch (err) {
     json(res, 502, { error: `Claude error: ${err.message}` });
@@ -483,12 +498,14 @@ async function handleSpeak(req, res) {
   const { text } = JSON.parse((await readBody(req)).toString() || "{}");
   if (!text) return json(res, 400, { error: "text required" });
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?output_format=mp3_44100_128`;
+  const t0 = Date.now();
   const el = await fetch(url, {
     method: "POST",
     headers: { "xi-api-key": ELEVENLABS_API_KEY, "content-type": "application/json", accept: "audio/mpeg" },
     // flash is ElevenLabs' lowest-latency model — fastest time-to-first-audio.
     body: JSON.stringify({ text, model_id: process.env.BILLI_TTS_MODEL || "eleven_flash_v2_5" }),
   });
+  console.log(`  speak: first audio in ${Date.now() - t0}ms`);
   if (!el.ok || !el.body) return json(res, 502, { error: `ElevenLabs ${el.status}: ${await el.text()}` });
   res.writeHead(200, { "content-type": "audio/mpeg" });
   Readable.fromWeb(el.body).pipe(res);
