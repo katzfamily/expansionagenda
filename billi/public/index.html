@@ -18,16 +18,10 @@
 
       <!-- ===== HERO ===== -->
       <section id="hero">
-        <!-- the orb (hold to talk) -->
+        <!-- the orb (hold to talk) — the photographic sphere shows through; the
+             glow blooms with your voice and is near-invisible at rest -->
         <div id="orb" role="button" tabindex="0" aria-label="Hold to talk">
           <div class="orb-glow"></div>
-          <div class="orb-rays"></div>
-          <div class="orb-sphere">
-            <div class="orb-tint"></div>
-            <div class="orb-sheen"></div>
-            <div class="orb-spec"></div>
-          </div>
-          <div class="orb-highlight"></div>
           <div class="orb-pulse"></div>
         </div>
 
@@ -35,7 +29,8 @@
         <div class="hero-pills">
           <span id="weather" hidden>
             <span id="weather-icon" aria-hidden="true"></span>
-            <span id="weather-temps"><span id="w-hi">–</span>° / <span id="w-lo">–</span>°</span>
+            <span id="weather-temps"><span id="w-hi">–</span>°<span id="w-lo" hidden></span></span>
+            <span class="sep">·</span>
             <span id="weather-place"></span>
           </span>
         </div>
@@ -44,7 +39,7 @@
       <!-- ===== STATUS BAND ===== -->
       <section id="status-band">
         <div class="greet">
-          <h1 id="greeting">Good <em>afternoon</em>, Cara</h1>
+          <h1 id="greeting">Good Afternoon, Cara</h1>
           <p id="state">hold the orb or press and hold space to talk</p>
         </div>
         <div class="links-wrap">

@@ -9,9 +9,7 @@ const stateEl = document.getElementById("state");
 const convoEl = document.getElementById("conversation");
 const warnEl = document.getElementById("warn");
 const orbGlow = orb.querySelector(".orb-glow");
-const orbTint = orb.querySelector(".orb-tint");
 const orbPulse = orb.querySelector(".orb-pulse");
-const orbRays = orb.querySelector(".orb-rays");
 
 // Conversation history sent to Claude each turn (stateless API).
 const messages = [];
@@ -32,28 +30,20 @@ const AMBER = "214,132,92";
 function animateOrb() {
   const t = performance.now() / 1000;
   const idle = 0.5 + 0.5 * Math.sin(t * 1.4);
-  // energy: gentle breathing at rest, audio-reactive while live.
-  const energy = phase === "idle" ? idle * 0.5 : Math.min(1, amplitude * 2.1);
+  // Near-zero at rest (so the photo reads clean); audio-reactive while live.
+  const energy = phase === "idle" ? idle * 0.12 : Math.min(1, amplitude * 2.1);
   const color = phase === "speaking" ? AMBER : PERIWINKLE;
 
   if (orbGlow) {
     orbGlow.style.background =
-      `radial-gradient(circle, rgba(${color},${(0.3 + energy * 0.4).toFixed(3)}), rgba(${color},0) 70%)`;
-  }
-  if (orbTint) {
-    orbTint.style.background =
-      `radial-gradient(circle at 42% 28%, rgba(255,255,255,0.4), rgba(${color},0.14) 54%, rgba(${color},0.04) 80%, transparent)`;
-  }
-  if (orbRays) {
-    orbRays.style.opacity = (0.22 + energy * 0.3).toFixed(3);
+      `radial-gradient(circle, rgba(${color},${(energy * 0.5).toFixed(3)}), rgba(${color},0) 70%)`;
   }
   if (orbPulse) {
-    const base = phase === "idle" ? 100 : phase === "speaking" ? 150 : 130;
-    const size = Math.round(base + energy * 44);
+    const size = Math.round(110 + energy * 70);
     orbPulse.style.width = `${size}px`;
     orbPulse.style.height = `${size}px`;
     orbPulse.style.background =
-      `radial-gradient(circle, rgba(${color},${(0.24 + energy * 0.22).toFixed(3)}), rgba(${color},0) 68%)`;
+      `radial-gradient(circle, rgba(${color},${(energy * 0.42).toFixed(3)}), rgba(${color},0) 68%)`;
   }
   requestAnimationFrame(animateOrb);
 }

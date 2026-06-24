@@ -57,102 +57,39 @@ html, body {
   background: linear-gradient(180deg, rgba(120, 104, 170, 0) 70%, rgba(108, 92, 158, 0.28));
 }
 
-/* orb — hold to talk */
+/* orb — hold to talk. The crystal ball lives in the hero photo; this is the
+   interactive zone over it, with a glow + pulse that bloom with your voice and
+   stay near-invisible at rest so the photo reads cleanly. */
 #orb {
   position: absolute;
   z-index: 5;
-  left: calc(50% - 150px);
-  top: 60px;
-  width: 300px;
-  height: 300px;
+  left: calc(50% - 185px);
+  top: 30px;
+  width: 370px;
+  height: 370px;
   cursor: pointer;
   user-select: none;
   touch-action: none;
-  animation: breathe 4.5s ease-in-out infinite;
 }
-@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-
 .orb-glow {
   position: absolute;
-  inset: -22px;
+  inset: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--peri), 0.42), rgba(var(--peri), 0) 70%);
-  filter: blur(16px);
-  transition: background 0.5s;
-}
-.orb-rays {
-  position: absolute;
-  inset: 14px;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg,
-    rgba(var(--peri), 0.5), rgba(255, 255, 255, 0.1) 28deg,
-    rgba(var(--peri), 0.5) 56deg, rgba(255, 255, 255, 0.1) 84deg,
-    rgba(var(--peri), 0.5) 112deg, rgba(255, 255, 255, 0.1) 140deg,
-    rgba(var(--peri), 0.5) 168deg, rgba(255, 255, 255, 0.1) 196deg,
-    rgba(var(--peri), 0.5) 224deg, rgba(255, 255, 255, 0.1) 252deg,
-    rgba(var(--peri), 0.5) 280deg, rgba(255, 255, 255, 0.1) 308deg,
-    rgba(var(--peri), 0.5) 336deg, rgba(255, 255, 255, 0.1) 360deg);
-  opacity: 0.26;
-  mix-blend-mode: soft-light;
-  animation: spin 22s linear infinite;
-}
-.orb-sphere {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow:
-    inset 0 -26px 42px -12px rgba(255, 255, 255, 0.85),
-    inset 0 22px 36px -10px rgba(108, 86, 150, 0.5),
-    inset 18px 0 30px -14px rgba(255, 255, 255, 0.4),
-    inset -18px 0 30px -14px rgba(188, 166, 226, 0.5),
-    0 32px 66px rgba(78, 58, 118, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.5);
-}
-.orb-tint {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 42% 28%, rgba(255, 255, 255, 0.4),
-    rgba(var(--peri), 0.14) 54%, rgba(var(--peri), 0.04) 80%, transparent);
-  mix-blend-mode: soft-light;
-  transition: background 0.5s;
-}
-.orb-sheen {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0) 42%);
-}
-.orb-spec {
-  position: absolute;
-  left: 63%;
-  top: 70%;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), transparent 70%);
-  filter: blur(1px);
-}
-.orb-highlight {
-  position: absolute;
-  left: 26%;
-  top: 16%;
-  width: 96px;
-  height: 60px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 70%);
-  filter: blur(2px);
+  background: radial-gradient(circle, rgba(var(--peri), 0), rgba(var(--peri), 0) 70%);
+  filter: blur(24px);
+  pointer-events: none;
+  transition: background 0.4s;
 }
 .orb-pulse {
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: 100px;
-  height: 100px;
+  top: 52%;
+  width: 120px;
+  height: 120px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--peri), 0.26), rgba(var(--peri), 0) 68%);
-  filter: blur(9px);
+  background: radial-gradient(circle, rgba(var(--peri), 0), rgba(var(--peri), 0) 68%);
+  filter: blur(12px);
   mix-blend-mode: screen;
   pointer-events: none;
 }

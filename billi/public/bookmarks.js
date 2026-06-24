@@ -10,12 +10,11 @@ const STORE_KEY = "billi.bookmarks.v1";
 const DEFAULTS = [
   { name: "Gmail", url: "https://mail.google.com" },
   { name: "Calendar", url: "https://calendar.google.com" },
-  { name: "Drive", url: "https://drive.google.com" },
   { name: "Stripe", url: "https://dashboard.stripe.com" },
-  { name: "Airtable", url: "https://airtable.com" },
   { name: "Slack", url: "https://app.slack.com" },
-  { name: "Granola", url: "https://app.granola.ai" },
-  { name: "Book Cara", url: "https://www.magicalteams.com/chat-with-cara" },
+  { name: "Asana", url: "https://app.asana.com" },
+  { name: "Airtable", url: "https://airtable.com" },
+  { name: "Fireflies", url: "https://app.fireflies.ai" },
 ];
 
 const grid = document.getElementById("link-grid");
@@ -56,9 +55,8 @@ function accentFor(i) {
 }
 
 function initials(name) {
-  const words = name.trim().split(/\s+/);
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
+  // Single letter, like the design (G, C, S, …).
+  return (name.trim()[0] || "?").toUpperCase();
 }
 
 function hostOf(url) {
