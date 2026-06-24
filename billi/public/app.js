@@ -358,37 +358,6 @@ if (clearBtn) {
   });
 }
 
-// ---- voice tempo (Slow / Normal / Fast) ----------------------------------
-const tempoButtons = Array.from(document.querySelectorAll(".tempo-seg button"));
-function markTempo(speed) {
-  for (const b of tempoButtons) {
-    b.classList.toggle("on", Math.abs(Number(b.dataset.speed) - speed) < 0.01);
-  }
-}
-for (const b of tempoButtons) {
-  b.addEventListener("click", async () => {
-    const speed = Number(b.dataset.speed);
-    markTempo(speed);
-    try {
-      await fetch("/api/voice", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ speed }),
-      });
-    } catch {
-      /* the visual selection still updates */
-    }
-  });
-}
-(async () => {
-  try {
-    const { speed } = await api("/api/voice");
-    markTempo(typeof speed === "number" ? speed : 1.1);
-  } catch {
-    markTempo(1.1);
-  }
-})();
-
 // ---- key check on load ---------------------------------------------------
 (async () => {
   await restoreConversation();

@@ -183,55 +183,6 @@ html, body {
 }
 #weather-temps #w-lo { opacity: 0.6; font-weight: 400; }
 #weather-place { font-weight: 600; }
-.pill.connected .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #5fbf7a;
-  box-shadow: 0 0 8px rgba(95, 191, 122, 0.8);
-}
-
-#tempo {
-  position: absolute;
-  right: 24px;
-  bottom: 22px;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.tempo-note {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 6px rgba(40, 28, 70, 0.5);
-}
-.tempo-seg {
-  display: flex;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(14px);
-}
-.tempo-seg button {
-  border: none;
-  background: transparent;
-  color: #5a5170;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 7px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.tempo-seg button.on {
-  color: #4a3f6e;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 10px rgba(90, 70, 130, 0.25);
-}
-
 /* ===== STATUS BAND ===== */
 #status-band {
   position: relative;
@@ -539,7 +490,6 @@ html, body {
   #hero { height: 320px; }
   #orb { width: 230px; height: 230px; left: calc(50% - 115px); top: 54px; }
   #greeting { font-size: 38px; }
-  #tempo { position: static; margin-top: 10px; }
   .hero-pills { position: static; margin: 0 0 0 0; padding: 16px 0 0 24px; }
   #grid { grid-template-columns: 1fr; }
   #status-band { flex-direction: column; }
