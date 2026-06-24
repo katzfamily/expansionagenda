@@ -83,16 +83,14 @@ and never crosses context between them.
 |---|---|---|
 | `BILLI_PORT` | `8787` | Local port. |
 | `BILLI_VOICE_ID` | `nklDUw4Cfwv6KJmhU9Vy` | ElevenLabs voice. |
-| `BILLI_MODEL` | `claude-opus-4-8` | Reasoning model. |
-| `BILLI_TTS_MODEL` | `eleven_turbo_v2_5` | ElevenLabs model (turbo = low latency). |
+| `BILLI_MODEL` | `claude-sonnet-4-6` | Reasoning model. Set `claude-haiku-4-5` for faster turns, `claude-opus-4-8` for max quality. |
+| `BILLI_TTS_MODEL` | `eleven_flash_v2_5` | ElevenLabs model (flash = lowest latency). |
 
 ## What's deliberately not here yet
 
 - Sending email (drafts only, by design — Billi never sends without sign-off).
 - Other connectors: Calendar, Slack, Stripe (the §8 integrations in the PRD).
 - Wake word (v0 is push-to-talk only — best while others are in earshot).
-- Streaming TTS (v0 speaks each reply after it's fully generated; replies are
-  short, so it stays snappy).
 
 See `../docs/billi-prd.md` for the full product spec and `../CLAUDE.md` for the
 operating guardrails Billi runs under.

@@ -9,6 +9,7 @@
 // the system prompt, so even this first version knows who she is.
 
 import { createServer } from "node:http";
+import { Readable } from "node:stream";
 import { readFile } from "node:fs/promises";
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -47,8 +48,9 @@ You are Billi, speaking out loud to Cara through a voice interface. Your reply
 is read aloud by a text-to-speech voice, so:
 - Respond only with your final spoken answer. No preamble, no reasoning aloud,
   no markdown, no bullet points, no headers, no emoji.
-- Be brief and conversational. Lead with the answer. Offer to elaborate rather
-  than dumping detail.
+- Be brief and conversational. Keep replies to one or two short sentences
+  unless Cara asks for more. Lead with the answer. Offer to elaborate rather
+  than dumping detail. Shorter replies reach her ear faster, so do not pad.
 - You have a Gmail connector with read and draft access across Cara's
   connected inboxes. Use it for triage, search, reading, and drafting. Tools:
   list_email_accounts, search_email (Gmail query syntax like is:unread,
@@ -440,7 +442,7 @@ async function handleRespond(req, res) {
     for (let step = 0; step < 6; step++) {
       const resp = await anthropic.messages.create({
         model: MODEL,
-        max_tokens: 1024,
+        max_tokens: 512, // short spoken replies finish faster end to end
         output_config: { effort: "low" }, // fast turns for voice
         system: systemPrompt,
         tools: TOOLS,
@@ -473,21 +475,23 @@ async function handleRespond(req, res) {
   }
 }
 
-// Text -> speech via ElevenLabs (Billi's voice).
+// Text -> speech via ElevenLabs (Billi's voice). Streamed: the audio is piped
+// to the browser as ElevenLabs produces it, so Billi starts talking on the
+// first chunk instead of after the whole clip is generated.
 async function handleSpeak(req, res) {
   if (!ELEVENLABS_API_KEY) return json(res, 500, { error: "ELEVENLABS_API_KEY not set in .env" });
   const { text } = JSON.parse((await readBody(req)).toString() || "{}");
   if (!text) return json(res, 400, { error: "text required" });
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?output_format=mp3_44100_128`;
   const el = await fetch(url, {
     method: "POST",
     headers: { "xi-api-key": ELEVENLABS_API_KEY, "content-type": "application/json", accept: "audio/mpeg" },
-    body: JSON.stringify({ text, model_id: process.env.BILLI_TTS_MODEL || "eleven_turbo_v2_5" }),
+    // flash is ElevenLabs' lowest-latency model — fastest time-to-first-audio.
+    body: JSON.stringify({ text, model_id: process.env.BILLI_TTS_MODEL || "eleven_flash_v2_5" }),
   });
-  if (!el.ok) return json(res, 502, { error: `ElevenLabs ${el.status}: ${await el.text()}` });
-  const audio = Buffer.from(await el.arrayBuffer());
-  res.writeHead(200, { "content-type": "audio/mpeg", "content-length": audio.length });
-  res.end(audio);
+  if (!el.ok || !el.body) return json(res, 502, { error: `ElevenLabs ${el.status}: ${await el.text()}` });
+  res.writeHead(200, { "content-type": "audio/mpeg" });
+  Readable.fromWeb(el.body).pipe(res);
 }
 
 // Memory widget: list, manually add, or remove a remembered fact.

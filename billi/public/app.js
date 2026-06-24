@@ -252,12 +252,12 @@ async function speak(text) {
     const e = await res.json().catch(() => ({}));
     throw new Error(e.error || "Speech failed");
   }
-  const buf = await res.arrayBuffer();
-  const url = URL.createObjectURL(new Blob([buf], { type: "audio/mpeg" }));
-  const audio = new Audio(url);
 
   const ac = ensureAudioCtx();
   if (ac.state === "suspended") await ac.resume();
+
+  // Wire an audio element through an analyser so the orb still reacts.
+  const audio = new Audio();
   const node = ac.createMediaElementSource(audio);
   const analyser = ac.createAnalyser();
   analyser.fftSize = 512;
@@ -266,9 +266,76 @@ async function speak(text) {
 
   phase = "speaking";
   const stop = meter(analyser);
+  try {
+    if (window.MediaSource && MediaSource.isTypeSupported("audio/mpeg")) {
+      await playStream(res, audio); // starts on the first chunk
+    } else {
+      await playBlob(res, audio); // fallback: whole clip first
+    }
+  } finally {
+    stop();
+  }
+}
+
+// Progressive playback: append audio chunks to a MediaSource as they stream in,
+// so Billi begins speaking almost immediately.
+function playStream(res, audio) {
+  return new Promise((resolve, reject) => {
+    const ms = new MediaSource();
+    audio.src = URL.createObjectURL(ms);
+    audio.onended = resolve;
+    audio.onerror = () => reject(new Error("Playback failed"));
+
+    ms.addEventListener("sourceopen", async () => {
+      URL.revokeObjectURL(audio.src);
+      let sb;
+      try {
+        sb = ms.addSourceBuffer("audio/mpeg");
+      } catch (err) {
+        return reject(err);
+      }
+      const queue = [];
+      let done = false;
+      const pump = () => {
+        if (sb.updating) return;
+        if (queue.length) sb.appendBuffer(queue.shift());
+        else if (done && ms.readyState === "open") {
+          try {
+            ms.endOfStream();
+          } catch {
+            /* already closed */
+          }
+        }
+      };
+      sb.addEventListener("updateend", pump);
+
+      const reader = res.body.getReader();
+      audio.play().catch(() => {});
+      try {
+        for (;;) {
+          const { value, done: d } = await reader.read();
+          if (d) {
+            done = true;
+            pump();
+            break;
+          }
+          queue.push(value);
+          pump();
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+// Fallback for browsers without MediaSource mpeg support.
+async function playBlob(res, audio) {
+  const buf = await res.arrayBuffer();
+  const url = URL.createObjectURL(new Blob([buf], { type: "audio/mpeg" }));
+  audio.src = url;
   await audio.play();
   await new Promise((resolve) => (audio.onended = resolve));
-  stop();
   URL.revokeObjectURL(url);
 }
 
